@@ -23,17 +23,23 @@ generated from `reports/metrics_summary.csv` by
 <!-- RESULTS:BEGIN -->
 | Method | SegSNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |
 |---|---|---|---|---|
-| Noisy | 1.52 | 14.50 | 0.921 | — |
-| SpectralSubtraction | 2.08 | 13.60 | 0.922 | — |
-| Wiener | 2.99 | 12.71 | 0.919 | — |
-| CNN | 5.88 | 11.37 | 0.912 | — |
+| Noisy | 1.52 | 14.50 | 0.921 | 8.45 |
+| SpectralSubtraction | 2.08 | 13.60 | 0.922 | 8.87 |
+| Wiener | 2.99 | 12.71 | 0.919 | 9.62 |
+| CNN | 5.63 | 11.90 | 0.920 | 14.20 |
 <!-- RESULTS:END -->
 
 ![Results chart](reports/results_chart.png)
 
-*Generated from the same CSV by `tools/make_results_chart.m`. The
-SI-SDR column is filled in by the current evaluation run (see
-`reports/EVALUATION.md`). Per-SNR breakdown: `reports/metrics_by_snr.csv`.*
+*Generated from the same CSV by `tools/make_results_chart.m`.
+Full report: `reports/EVALUATION.md`. Per-SNR breakdown:
+`reports/metrics_by_snr.csv`. The CNN improves segmental SNR by
+**+4.12 dB** over the noisy input and SI-SDR by **+5.76 dB**; its
+STOI (0.920) sits within 0.001 of the noisy input — the previous
+model's below-noisy STOI gap (−0.009) is nearly closed, at a small
+segmental-SNR cost against that model (5.88 dB). Both models'
+numbers are on record: see
+[model selection](#how-the-shipped-model-was-chosen).* 
 
 ## Hear it
 
@@ -273,9 +279,13 @@ STOI; Valentini-Botinhao et al. (2016) for the corpus.
 - **Noisy phase is reused.** Standard for mask systems; phase-aware
   estimation (reading 5) is future work.
 - **STOI is a trade-off, managed openly.** Aggressive masking buys
-  segmental SNR at a small intelligibility cost; the shipped
-  operating point was chosen on held-out data to keep STOI at or
-  above the noisy reference (see the ablation log).
+  segmental SNR at a small intelligibility cost. The shipped
+  operating point was chosen on held-out validation data, where it
+  lifted STOI above the noisy reference; on the full test set the
+  remaining STOI gap is 0.001 (0.920 vs 0.921), down from the
+  previous model's 0.009 — bought with 0.25 dB of segmental SNR
+  against that model. The full before/after is in the ablation log,
+  not hidden.
 - **One environment verified.** All numbers come from MATLAB
   R2026b (Online). Other releases are expected to work but are not
   claimed as verified.

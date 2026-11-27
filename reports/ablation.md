@@ -105,3 +105,27 @@ data. The floor 0.20/exp 0.7 variant's extra +0.0005 STOI costs
 more SegSNR and LSD than it is worth. The winner is now evaluated
 exactly once on the full 824-file test set; the v2 numbers remain
 frozen in `reports/baseline_v1.csv` for the before/after record.
+
+### Test-set outcome (the single full evaluation, 2026-11-27)
+
+The chosen configuration was evaluated once on the full 824-file
+test set (chunked 4 × 206, merged; `reports/metrics_summary.csv`):
+
+| CNN model | SegSNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |
+|---|---|---|---|---|
+| v2 @ floor 0 / exp 1.0 (previous) | 5.88 | 11.37 | 0.912 | — |
+| **R1 @ floor 0.10 / exp 0.7 (shipped)** | 5.63 | 11.90 | 0.920 | 14.20 |
+
+Read this honestly: on the test set the shipped configuration
+**trades** segmental SNR (−0.25 dB) and LSD (+0.53 dB) for STOI
+(+0.0075). The STOI gap against the noisy input shrinks from
+−0.009 to −0.001 — nearly closed, not eliminated. The comparison
+is confounded by design: model and operating point changed
+together, and at the *matched* raw-mask operating point R1 beat
+v2 clearly on validation (+0.54 dB SegSNR), so the test-set
+SegSNR difference is the known cost of the softer mask
+(Phase 1a: softer suppression helps STOI, costs SegSNR), not a
+weaker model. The operating point was selected on validation
+before this test run, per protocol; it was **not** re-tuned after
+seeing these numbers, and this paragraph is the disclosure of
+what the trade bought and what it cost.

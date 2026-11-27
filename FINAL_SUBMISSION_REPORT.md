@@ -110,3 +110,52 @@ summary = evaluate_models()   % rewrites reports/ from the full test set
 - Training uses the `trainNetwork` API (current and verified on
   R2026b); MathWorks now recommends `trainnet` for new code, so a
   future MATLAB release may require that migration.
+
+---
+
+## Addendum — submission-hardening round (2026-11-27, later the same day)
+
+The sections above describe the repository as first submitted.
+The same evening, a hardening round was run against the hub's
+Repository Guidelines and the project brief. What changed, with
+the before/after measured on the full 824-file test set:
+
+| CNN | SegSNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |
+|---|---|---|---|---|
+| v2, 800 utts / 24 epochs, raw mask | 5.88 | 11.37 | 0.912 | — |
+| R1, 1,600 utts / 16 epochs, floor 0.10 / exp 0.7 | 5.63 | 11.90 | 0.920 | 14.20 |
+
+- **Model selection is now evidence-based.** R1 was trained with
+  two speakers held out and beat v2 on every configuration and
+  metric on 145 held-out validation files (at the matched raw-mask
+  setting: SegSNR 4.16 vs 3.61). The shipped operating point
+  (mask floor 0.10, exponent 0.7) was chosen on that validation —
+  before the single test evaluation — and trades 0.25 dB of test
+  SegSNR for +0.0075 STOI: the below-noisy STOI gap shrank from
+  −0.009 to −0.001. Full log: `reports/ablation.md`; v2 frozen in
+  `reports/baseline_v1.csv`.
+- **Evaluation grew up:** SI-SDR added; per-SNR breakdown
+  (`reports/metrics_by_snr.csv`, mixture SNR measured per file
+  from its clean reference); a PESQ route exists offline
+  (`tools/python_metrics.py`) — PESQ numbers are reported only
+  where that script has actually run, with their N.
+- **Verification grew up:** test suite 25 → 26, adding a
+  cross-check of the hand-written STFT against the Signal
+  Processing Toolbox `stft` (passes; the toolbox's centred padding
+  convention differs, so the test compares transform math on a
+  pre-padded signal). `verify_submission()` gives a reviewer a
+  one-command PASS/FAIL audit, including reproducing the committed
+  metrics on 8 files (worst deviation 0.00 of tolerance).
+- **Real-time measured:** simulated streaming in 256 ms chunks —
+  CNN mean 18.1 ms, worst 83.3 ms per chunk (real-time factor
+  ≈ 0.07), with its ≈ 1.02 s segment look-ahead disclosed
+  (`demo_realtime.m`, `reports/realtime_results.csv`).
+- **Required products, machine-generated:**
+  `reports/required_products.txt` — MATLAB + Deep Learning
+  Toolbox only. The Audio Toolbox was investigated thoroughly and
+  is not usable in the verification environment (its functions
+  fail their licence checkout there); nothing in the pipeline
+  depends on it.
+- Two limitation bullets above are superseded by this addendum:
+  the model is now trained on 1,600 utterances, and the STOI gap
+  is 0.001, not 0.009. The `trainNetwork` note stands.

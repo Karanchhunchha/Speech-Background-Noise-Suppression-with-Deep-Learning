@@ -86,10 +86,15 @@ function ok = verify_submission()
     % 4. README table consistency --------------------------------------
     readmeFile = fullfile(rootDir, 'README.md');
     if exist(readmeFile, 'file') && contains(fileread(readmeFile), 'RESULTS:BEGIN')
-        if update_readme_results('check')
-            fprintf('PASS  README results table matches metrics_summary.csv\n');
-        else
-            fprintf('FAIL  README results table is stale (run update_readme_results()).\n');
+        try
+            if update_readme_results('check')
+                fprintf('PASS  README results table matches metrics_summary.csv\n');
+            else
+                fprintf('FAIL  README results table is stale (run update_readme_results()).\n');
+                failures = failures + 1;
+            end
+        catch ME
+            fprintf('FAIL  README results check errored: %s\n', ME.message);
             failures = failures + 1;
         end
     else
