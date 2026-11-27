@@ -10,7 +10,7 @@
 
 | Brief item | Delivered |
 |---|---|
-| Literature / background study | Approach grounded in Boll (1979), Ephraim–Malah (1984), Taal et al. (2011) and the MathWorks denoising example; design documented in the README |
+| Literature / background study | README "Literature in brief" discusses the brief's suggested readings (DNS Challenge, RNNoise, FullSubNet, PoCoNet, WaveNet denoising) and the classical roots (Boll 1979, Ephraim–Malah 1984, Taal et al. 2011), and states why the compact-CNN IRM design point was chosen; the MathWorks denoising example was the implementation reference |
 | Dataset of noisy/clean speech | VoiceBank-DEMAND (CC BY 4.0), the standard academic benchmark for this task — used instead of the full Microsoft DNS corpus (hundreds of GB); the deviation and its reason are stated in the README. `download_data()` fetches and extracts 824 test pairs + 800 training pairs |
 | Deep learning network for noise suppression | Compact fully-convolutional CNN (~24k parameters) estimating an ideal ratio mask from a log-magnitude spectrogram, Deep Learning Toolbox, noisy-phase resynthesis |
 | Validation, objective | Segmental SNR, log-spectral distance and STOI over the full 824-file standard test set (speakers p232/p257, unseen in training), against two classical baselines |

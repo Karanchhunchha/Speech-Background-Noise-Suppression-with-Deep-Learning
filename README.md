@@ -64,11 +64,50 @@ that runs from a fresh clone.
 5. **Objective evaluation** — segmental SNR, log-spectral distance and
    **STOI** (Taal et al., 2011), the intelligibility metric the field
    reports. STOI is implemented from the paper in this repo and
-   cross-validated against the reference implementation (agreement
-   within 0.0005 on the sample pairs), so the evaluation needs no
-   toolbox either.
+   cross-validated against pystoi, a reference implementation of the
+   algorithm (agreement within 0.0005 on the sample pairs), so the
+   evaluation needs no toolbox either.
 6. **Subjective evaluation** — `demo_denoise()` writes before/after
    .wav files and spectrogram figures for the committed samples.
+
+## Literature in brief
+
+The brief's suggested readings map the design space this project
+chose from. The **DNS Challenge** line of work (Reddy et al.,
+Interspeech 2020) set the modern benchmark protocol — large-scale
+noisy/clean corpora and held-out test sets — which this project
+follows at academic scale with VoiceBank-DEMAND. **RNNoise** (Valin,
+2018) showed a small recurrent network combined with classical DSP
+can suppress noise in real time; **FullSubNet** (Hao et al., ICASSP
+2021) fused full-band and sub-band modelling for state-of-the-art
+quality at higher compute; **PoCoNet** (Isik et al., Interspeech
+2020) added frequency-positional embeddings and a perceptually
+biased loss; and **WaveNet-style** models (Rethage et al., ICASSP
+2018) denoise directly in the waveform domain. The classical roots
+are Boll's spectral subtraction and Ephraim–Malah estimation, both
+implemented here as baselines.
+
+This project deliberately implements the **compact CNN
+ideal-ratio-mask** point in that space: it is the strongest design
+that still trains and evaluates end-to-end on a CPU with only the
+Deep Learning Toolbox, which keeps every number in this repository
+reproducible by a reviewer on a student laptop. The measured cost of
+that choice is visible in the results: segmental SNR well above the
+classical baselines, with a small STOI trade-off that a
+perceptually weighted loss (as in PoCoNet) would be the next step to
+close.
+
+## AI assistance and verification
+
+This project was developed with AI assistance (code drafting and
+documentation) under the author's direction. In line with the hub's
+Generative AI Guidelines, nothing AI-produced was accepted
+unverified: every component is covered by the unit-test suite
+(22/22 passing in MATLAB Online), the headline metrics come from the
+project's own evaluation run on the full test set, and the STOI
+implementation was cross-validated against the reference algorithm —
+a process that caught and fixed a real bug (see
+`FINAL_SUBMISSION_REPORT.md`).
 
 ## Quick start
 
@@ -126,12 +165,19 @@ summary = evaluate_models()
 - Enhancement uses the noisy phase, as is standard for mask-based
   systems; phase-aware estimation is future work.
 - STOI here is a clean-room implementation of Taal et al. (2011),
-  cross-validated against the authors' reference algorithm (via
-  pystoi) on the committed samples — agreement within 0.0005 per file.
+  cross-validated against pystoi, a reference implementation of the
+  algorithm, on the committed samples — agreement within 0.0005 per
+  file.
   The analysis window is 256 samples, as in the reference; a 512-sample
   window over-smooths the envelopes and inflates the score, a failure
   mode this project's verification caught and fixed (see the
   `stoiScore` header).
+
+## License
+
+BSD 2-Clause — see `LICENSE`. The committed sample audio is
+CC BY 4.0 (VoiceBank-DEMAND; see `data/sample/SOURCE.md`), and the
+full corpus remains under its original Edinburgh DataShare terms.
 
 ## References
 

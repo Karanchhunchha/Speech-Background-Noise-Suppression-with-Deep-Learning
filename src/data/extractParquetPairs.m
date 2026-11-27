@@ -6,6 +6,12 @@ function count = extractParquetPairs(parquetFile, cleanDir, noisyDir, maxPairs)
 %   structs with a bytes field holding the .wav content) and writes up
 %   to maxPairs pairs as .wav files into the two folders. Returns the
 %   number of pairs written.
+%
+%   Security note: the ids come from a downloaded file, so each one is
+%   validated against the VoiceBank naming pattern (letters, digits,
+%   underscore, hyphen — e.g. "p232_001") before it is used as a file
+%   name. An id containing path separators or ".." is rejected, so a
+%   tampered shard cannot write outside the two target folders.
 
     if ~exist(cleanDir, 'dir'); mkdir(cleanDir); end
     if ~exist(noisyDir, 'dir'); mkdir(noisyDir); end
@@ -15,6 +21,10 @@ function count = extractParquetPairs(parquetFile, cleanDir, noisyDir, maxPairs)
     noisyBytes = audioBytesColumn(T.noisy);
     count = min([maxPairs, height(T), numel(ids)]);
     for i = 1:count
+        if isempty(regexp(char(ids(i)), '^[A-Za-z0-9_-]+$', 'once'))
+            error('extractParquetPairs:UnsafeId', ...
+                'Refusing to write a file for unsafe dataset id "%s".', ids(i));
+        end
         writeBytes(fullfile(cleanDir, ids(i) + ".wav"), cleanBytes{i});
         writeBytes(fullfile(noisyDir, ids(i) + ".wav"), noisyBytes{i});
     end

@@ -3,7 +3,7 @@ function model = loadDenoiseModel(modelFile)
 %   model = LOADDENOISEMODEL(modelFile) loads the .mat artifact written
 %   by TRAIN_MODEL: a struct with fields net (the trained network),
 %   mu and sigma (log-magnitude standardisation constants from the
-%   training data) and config (winLen, hop, segLen).
+%   training data) and winLen, hop, segLen (the STFT configuration).
 
     data = load(modelFile);
     if ~isfield(data, 'model')

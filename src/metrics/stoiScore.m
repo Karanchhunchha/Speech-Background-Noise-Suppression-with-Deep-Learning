@@ -5,7 +5,7 @@ function d = stoiScore(clean, est, fs)
 %   C. H. Taal, R. C. Hendriks, R. Heusdens and J. Jensen, "An Algorithm
 %   for Intelligibility Prediction of Time-Frequency Weighted Noisy
 %   Speech", IEEE Trans. Audio Speech Lang. Process. 19(7), 2011, and
-%   matching the authors' reference implementation:
+%   mirroring the reference implementation of that algorithm:
 %
 %   1. Both signals are resampled to 10 kHz.
 %   2. Silent frames are removed in the time domain: 256-sample
@@ -23,10 +23,10 @@ function d = stoiScore(clean, est, fs)
 %      STOI is the mean correlation, in [0, 1]; STOI(x, x) = 1.
 %
 %   Clean-room implementation from the paper, included so the project
-%   needs no toolbox. It was cross-validated against the reference
-%   implementation (pystoi) on the committed sample pairs: agreement
-%   within 0.0005 on every file (e.g. noisy p232_001: 0.8976 reference,
-%   0.8971 here). An earlier draft of this function used a 512-sample
+%   needs no toolbox. It was cross-validated against pystoi, a
+%   reference implementation of Taal et al. (2011), on the committed
+%   sample pairs: agreement within 0.0005 on every file (e.g. noisy
+%   p232_001: 0.8976 reference, 0.8971 here). An earlier draft of this function used a 512-sample
 %   analysis window, which over-smooths the envelopes and inflates the
 %   score (0.9997 on the same file); the window length is load-bearing
 %   and is covered by the unit tests' range checks.

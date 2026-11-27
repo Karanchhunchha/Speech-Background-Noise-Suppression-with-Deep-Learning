@@ -6,6 +6,17 @@ data/training_patches.mat
 # Generated demo outputs
 results/
 
+# Only the shipped trained model is committed; backups stay local
+models/*
+!models/denoiseNet.mat
+
+# Chunked-evaluation intermediates (canonical outputs are
+# metrics_summary.csv, metrics_per_file.csv and EVALUATION.md)
+reports/metrics_part*.csv
+reports/metrics_summary_part*.csv
+reports/EVALUATION_part*.md
+reports/*_v1.*
+
 # MATLAB temporaries
 *.asv
 slprj/

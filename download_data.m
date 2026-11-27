@@ -10,10 +10,15 @@ function download_data()
 %
 %   Dataset: C. Valentini-Botinhao, "Noisy speech database for training
 %   speech enhancement algorithms and TTS models", Edinburgh DataShare,
-%   2017. DOI 10.7488/ds/2117. Licence: CC BY 4.0. The 16 kHz mirror
-%   (JacobLinCool/VoiceBank-DEMAND-16k) is used because the scripts and
-%   metrics in this project operate at 16 kHz; the content is identical
-%   to the DataShare release resampled from 48 kHz.
+%   2017. DOI 10.7488/ds/2117. Licence: CC BY 4.0. A 16 kHz mirror of
+%   the DataShare release (JacobLinCool/VoiceBank-DEMAND-16k on
+%   Hugging Face) is used because the scripts and metrics in this
+%   project operate at 16 kHz.
+%
+%   Supply-chain safety: the download URL is pinned to one immutable
+%   dataset revision, and every shard's SHA-256 is verified against
+%   the values recorded below before anything is extracted. A shard
+%   that fails the check is rejected with an error, never parsed.
 %
 %   The full corpus is NOT committed to this repository (size); only a
 %   small sample under data/sample is, which is enough for the demo and
@@ -35,13 +40,19 @@ function download_data()
 
     dlDir = fullfile(rootDir, 'data', 'downloads');
     if ~exist(dlDir, 'dir'); mkdir(dlDir); end
-    base = 'https://huggingface.co/datasets/JacobLinCool/VoiceBank-DEMAND-16k/resolve/main/data/';
+    % Pinned dataset revision (immutable) + recorded SHA-256 per shard.
+    revision = '4497db342d7312978c45690591fda86117831940';
+    base = "https://huggingface.co/datasets/JacobLinCool/VoiceBank-DEMAND-16k/resolve/" ...
+        + revision + "/data/";
+    testSha256 = '08b43dbea4a15a5f3067233f5cb2de3e5c9a600a3ae5b969661740778f642c87';
+    trainSha256 = 'd8195194a27e8d007502d6eacf5e0fac71adb9fe343ee228b78bae3559464319';
 
     testParquet = fullfile(dlDir, 'test.parquet');
     if ~exist(testParquet, 'file')
         fprintf('Downloading test shard (about 133 MB)...\n');
         websave(testParquet, base + "test-00000-of-00001.parquet");
     end
+    verifySha256(testParquet, testSha256);
     nTest = extractParquetPairs(testParquet, testClean, testNoisy, inf);
     fprintf('Extracted %d test pairs.\n', nTest);
 
@@ -50,6 +61,38 @@ function download_data()
         fprintf('Downloading training shard 1 of 5 (about 445 MB)...\n');
         websave(trainParquet, base + "train-00000-of-00005.parquet");
     end
+    verifySha256(trainParquet, trainSha256);
     nTrain = extractParquetPairs(trainParquet, trainClean, trainNoisy, 800);
     fprintf('Extracted %d training pairs.\n', nTrain);
+end
+
+function verifySha256(file, expected)
+%VERIFYSHA256 Error unless FILE's SHA-256 equals EXPECTED (hex).
+    actual = sha256OfFile(file);
+    if ~strcmp(actual, expected)
+        error('download_data:ChecksumMismatch', ...
+            ['SHA-256 mismatch for %s.\nExpected %s\nActual   %s\n' ...
+             'The file was NOT extracted. Delete it and re-run to fetch a fresh copy.'], ...
+            file, expected, actual);
+    end
+    fprintf('SHA-256 verified for %s\n', file);
+end
+
+function hex = sha256OfFile(file)
+%SHA256OFFILE SHA-256 of a file via the Java MessageDigest API.
+    md = java.security.MessageDigest.getInstance('SHA-256');
+    fid = fopen(file, 'r');
+    if fid < 0
+        error('download_data:ReadFailed', 'Cannot open %s.', file);
+    end
+    cleaner = onCleanup(@() fclose(fid));
+    while ~feof(fid)
+        chunk = fread(fid, 1024 * 1024, '*uint8');
+        if ~isempty(chunk)
+            md.update(chunk);
+        end
+    end
+    digest = typecast(md.digest(), 'uint8');
+    hex = lower(reshape(dec2hex(digest, 2)', 1, []));
+    clear cleaner;
 end
