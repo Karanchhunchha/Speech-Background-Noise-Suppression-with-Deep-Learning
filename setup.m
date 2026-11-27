@@ -8,4 +8,8 @@ function rootDir = setup()
     rootDir = fileparts(mfilename('fullpath'));
     addpath(rootDir);
     addpath(genpath(fullfile(rootDir, 'src')));
+    toolsDir = fullfile(rootDir, 'tools');
+    if isfolder(toolsDir)
+        addpath(toolsDir);
+    end
 end
