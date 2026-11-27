@@ -7,13 +7,19 @@ function enhanced = denoiseWithNet(noisy, fs, model, varargin)
 %   overlaps and clipped to [0, 1], and the signal is resynthesised
 %   with the noisy phase.
 %
-%   Name-value options (defaults reproduce the original behaviour
-%   exactly; they exist for the Phase-1 ablation in reports/ablation.md):
+%   Name-value options:
 %     'MaskFloor'    - lower bound applied to the averaged mask before
-%                      use (default 0). A floor limits over-suppression
-%                      of low-energy speech, a known STOI lever.
-%     'MaskExponent' - exponent applied to the mask (default 1).
+%                      use (default 0.10). A floor limits
+%                      over-suppression of low-energy speech.
+%     'MaskExponent' - exponent applied to the mask (default 0.7).
 %                      Values below 1 soften the suppression.
+%   The defaults are the shipped operating point, chosen by the
+%   speaker-disjoint held-out ablation in reports/ablation.md
+%   (pooled p236+p254 validation, 145 files): with the R1 model this
+%   setting keeps segmental SNR within 0.1 dB of the grid maximum
+%   while lifting STOI above the noisy reference — the raw-mask
+%   setting (floor 0, exponent 1) does not. Pass 'MaskFloor', 0,
+%   'MaskExponent', 1 to reproduce the raw predicted mask.
 %
 %   Models in this project are trained on 16 kHz audio (the training
 %   pipeline enforces that rate), so fs must be 16000: applying the
@@ -21,8 +27,8 @@ function enhanced = denoiseWithNet(noisy, fs, model, varargin)
 %   would silently produce wrong results, and is rejected instead.
 
     p = inputParser;
-    p.addParameter('MaskFloor', 0, @(x) isscalar(x) && x >= 0 && x < 1);
-    p.addParameter('MaskExponent', 1, @(x) isscalar(x) && x > 0);
+    p.addParameter('MaskFloor', 0.10, @(x) isscalar(x) && x >= 0 && x < 1);
+    p.addParameter('MaskExponent', 0.7, @(x) isscalar(x) && x > 0);
     p.parse(varargin{:});
     maskFloor = p.Results.MaskFloor;
     maskExponent = p.Results.MaskExponent;

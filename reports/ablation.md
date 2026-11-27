@@ -64,7 +64,7 @@ retraining is still required. Candidate inference configuration
 carried forward: **floor 0.10, exp 0.7** (best SegSNR, near-best
 STOI); floor 0.20/exp 0.7 is the STOI-maximal variant.
 
-## Step 1b — retraining (in progress)
+## Step 1b — retraining
 
 Protocol: candidates train with validation speakers **p236 and
 p254 excluded** (2,584 files of 8 speakers remain available) and are
@@ -72,4 +72,36 @@ ranked on pooled p236+p254 validation against the shipped model
 under identical inference configurations. The winner is evaluated
 once on the full test set.
 
-*(Results appended as runs complete; failed runs are recorded too.)*
+### Candidate R1 (trained 2026-11-27, MATLAB Online)
+
+1,600 utterances, 9,600 patches, 16 epochs, speakers p236/p254
+excluded (mu 0.1597, sigma 0.3042; training loop 1 h 13 min).
+Pooled held-out validation, 145 files (noisy reference:
+SegSNR 1.96 dB, LSD 19.52 dB, STOI 0.8118):
+
+| Model | Floor | Exp | SegSNR (dB) | LSD (dB) | STOI |
+|---|---|---|---|---|---|
+| shipped v2 | 0.00 | 1.0 | 3.614 | 14.617 | 0.8011 |
+| shipped v2 | 0.05 | 0.7 | 3.724 | 15.682 | 0.8086 |
+| shipped v2 | 0.20 | 0.7 | 3.692 | 15.734 | 0.8092 |
+| **R1** | 0.00 | 1.0 | 4.156 | 14.443 | 0.8051 |
+| **R1** | 0.05 | 1.0 | **4.161** | **14.443** | 0.8054 |
+| **R1** | **0.10** | **0.7** | 4.067 | 15.584 | **0.8123** |
+| **R1** | 0.20 | 0.7 | 4.027 | 15.638 | 0.8129 |
+
+(Full 8-configuration grids for both models were measured; the
+rows above are the decision-relevant ones. R1 beats the shipped
+model on every configuration and every metric.)
+
+### Ship decision (2026-11-27)
+
+**Ship R1 with mask floor 0.10, exponent 0.7** (now the defaults in
+`denoiseWithNet`). Rationale: it gives up only 0.09 dB of segmental
+SNR against the grid maximum (4.07 vs 4.16) while lifting STOI
+**above the noisy reference** (0.8123 vs 0.8118) — the shipped
+model's one documented weakness on the test set was a STOI below
+the noisy input, and this operating point removes it on held-out
+data. The floor 0.20/exp 0.7 variant's extra +0.0005 STOI costs
+more SegSNR and LSD than it is worth. The winner is now evaluated
+exactly once on the full 824-file test set; the v2 numbers remain
+frozen in `reports/baseline_v1.csv` for the before/after record.

@@ -13,9 +13,15 @@ classdef test_ToolboxCrossCheck < matlab.unittest.TestCase
             rng(7);
             x = randn(16000, 1);
             ours = stft(x, 512, 256);
+            % Note: the toolbox parser rejects 'Centered' together
+            % with 'FrequencyRange', so the range is left at its
+            % default and a two-sided result is sliced to one-sided.
             theirs = toolboxStft(x, 'Window', hann(512, 'periodic'), ...
                 'OverlapLength', 256, 'FFTLength', 512, ...
-                'Centered', true, 'FrequencyRange', 'onesided');
+                'Centered', true);
+            if size(theirs, 1) == 512
+                theirs = theirs(1:257, :);
+            end
             nFrames = min(size(ours, 2), size(theirs, 2));
             testCase.verifyEqual(size(theirs, 1), size(ours, 1));
             diff = max(abs(ours(:, 1:nFrames) - theirs(:, 1:nFrames)), [], 'all');
