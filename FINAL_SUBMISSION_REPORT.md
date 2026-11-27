@@ -138,7 +138,10 @@ the before/after measured on the full 824-file test set:
   (`reports/metrics_by_snr.csv`, mixture SNR measured per file
   from its clean reference); a PESQ route exists offline
   (`tools/python_metrics.py`) — PESQ numbers are reported only
-  where that script has actually run, with their N.
+  where that script has actually run, with their N. It has run:
+  on an 8-file subset the shipped CNN scores PESQ-WB 2.334 vs
+  2.114 noisy / 2.185 spectral subtraction / 2.247 Wiener
+  (`reports/pesq_subset.md`, `reports/pesq_results.csv`).
 - **Verification grew up:** test suite 25 → 26, adding a
   cross-check of the hand-written STFT against the Signal
   Processing Toolbox `stft` (passes; the toolbox's centred padding

@@ -175,7 +175,9 @@ not hidden.
 - **PESQ** — needs a licensed reference implementation that this
   MATLAB environment does not have, so PESQ is computed offline by
   `tools/python_metrics.py` on exported clips, with its sample size
-  stated wherever it is reported.
+  stated wherever it is reported. Measured on an 8-file subset
+  (PESQ-WB): Noisy 2.11, SpectralSubtraction 2.19, Wiener 2.25,
+  **CNN 2.33** — per-file scores in `reports/pesq_results.csv`.
 - **Listening** — `tools/make_listening_test.m` builds a blinded,
   randomised listening set; `tools/analyze_listening_test.m`
   summarises real ratings. No ratings are ever pre-filled.
