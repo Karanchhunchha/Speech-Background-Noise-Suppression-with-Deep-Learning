@@ -21,6 +21,10 @@ function main(varargin)
     addParameter(p, 'MaxFiles', Inf);
     parse(p, varargin{:});
     stage = lower(string(p.Results.Stage));
+    validStages = ["all", "test", "demo", "evaluate", "train"];
+    if ~any(stage == validStages)
+        error('main:BadStage', 'Unknown stage "%s". Valid stages: all, test, demo, evaluate, train.', stage);
+    end
 
     if p.Results.Full || stage == "train"
         download_data();
@@ -46,10 +50,6 @@ function main(varargin)
         else
             evaluate_models('MaxFiles', p.Results.MaxFiles);
         end
-    end
-    if ~(stage == "all" || stage == "test" || stage == "demo" || ...
-            stage == "evaluate" || stage == "train")
-        error('main:BadStage', 'Unknown stage "%s".', stage);
     end
     fprintf('\nMAIN: pipeline finished (stage: %s).\n', stage);
 end

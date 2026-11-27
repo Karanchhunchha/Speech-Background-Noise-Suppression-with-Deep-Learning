@@ -133,6 +133,8 @@ function [xOut, yOut] = removeSilentFrames(x, y)
 end
 
 function buf = overlapAdd(frames, hop, winLen)
+%OVERLAPADD Plain overlap-add of windowed frames (no envelope
+%   normalisation), as the reference STOI algorithm specifies.
     numFrames = size(frames, 2);
     if numFrames == 0
         buf = zeros(0, 1);

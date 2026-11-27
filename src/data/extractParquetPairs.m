@@ -50,6 +50,7 @@ function bytesList = audioBytesColumn(col)
 end
 
 function writeBytes(file, bytes)
+%WRITEBYTES Write raw bytes to a file, closing it even on error.
     fid = fopen(file, 'w');
     if fid < 0
         error('extractParquetPairs:WriteFailed', 'Cannot open %s for writing.', file);

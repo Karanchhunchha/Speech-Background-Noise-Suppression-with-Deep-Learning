@@ -4,10 +4,11 @@ function layers = buildDenoiseNet(numFreqBins, segLen)
 %   of a small fully-convolutional network that maps a standardised
 %   log-magnitude spectrogram segment (numFreqBins x segLen) to an
 %   ideal-ratio-mask estimate of the same size. The network is
-%   deliberately small (about 24k parameters) so it trains on CPU in
-%   minutes: five 3x3 convolutions with batch normalisation and ReLU,
-%   and a linear regression head (mask values are clipped to [0, 1] at
-%   inference time in DENOISEWITHNET).
+%   deliberately small (about 24k parameters) so it trains on CPU
+%   without specialised hardware — minutes for a quick configuration,
+%   about 55 minutes for the shipped one: five 3x3 convolutions with
+%   batch normalisation and ReLU, and a linear regression head (mask
+%   values are clipped to [0, 1] at inference time in DENOISEWITHNET).
 
     layers = [
         imageInputLayer([numFreqBins segLen 1], 'Normalization', 'none', 'Name', 'input')

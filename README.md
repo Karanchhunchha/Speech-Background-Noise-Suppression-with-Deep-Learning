@@ -29,6 +29,14 @@ listening demo.
 > Inference speed (measured): 0.17 s to denoise a 1.74 s clip on a
 > MATLAB Online CPU — about 10× faster than real time.
 
+![Spectrogram comparison for sample p232_001](results/demo/p232_001_spectrograms.png)
+
+*Spectrograms for the committed sample p232_001, top to bottom: noisy
+input, spectral subtraction, Wiener filter, CNN (this project). The
+noise floor visible in the noisy panel is progressively removed,
+most completely by the CNN. Regenerate with `demo_denoise()`; the
+matching before/after audio files are in `results/demo/`.*
+
 ## Why this problem
 
 Background noise is the main barrier to intelligible speech in hearing
@@ -45,8 +53,10 @@ that runs from a fresh clone.
 
 1. **Data** — VoiceBank-DEMAND (Valentini-Botinhao, Edinburgh
    DataShare, DOI 10.7488/ds/2117, CC BY 4.0): clean read speech mixed
-   with DEMAND environmental noise at 0–15 dB SNR. 800 training pairs
-   are used; evaluation is on the corpus's standard 824-pair test set.
+   with DEMAND environmental noise (training mixtures at
+   0/5/10/15 dB SNR; the test set at 2.5/7.5/12.5/17.5 dB). 800
+   training pairs are used; evaluation is on the corpus's standard
+   824-pair test set.
    (The brief suggests the Microsoft DNS corpus; VoiceBank-DEMAND is
    the standard academic benchmark for this task and is used here
    because the full DNS corpus is hundreds of gigabytes — the pipeline
@@ -141,6 +151,7 @@ The individual stages are also callable on their own:
 | `prepare_training_data.m` | Builds standardised log-magnitude / IRM training patches |
 | `train_model.m` | Trains the CNN, saves `models/denoiseNet.mat` |
 | `evaluate_models.m` | Objective evaluation; writes `reports/metrics_*.csv`, `reports/EVALUATION.md` |
+| `merge_evaluation.m` | Combines chunked evaluation outputs into the final reports (refuses overlapping chunks) |
 | `demo_denoise.m` | Before/after audio + spectrogram figures in `results/demo/` |
 | `run_all_tests.m` | Full unit-test suite |
 | `src/audio/` | Toolbox-free STFT / ISTFT / FFT resampler |
@@ -186,6 +197,11 @@ The individual stages are also callable on their own:
 BSD 2-Clause — see `LICENSE`. The committed sample audio is
 CC BY 4.0 (VoiceBank-DEMAND; see `data/sample/SOURCE.md`), and the
 full corpus remains under its original Edinburgh DataShare terms.
+
+## Author
+
+Karan Chhunchha — HNGU Patan, Department of Computer Science.
+GitHub: [Karanchhunchha](https://github.com/Karanchhunchha)
 
 ## References
 

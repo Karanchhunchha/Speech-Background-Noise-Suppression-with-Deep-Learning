@@ -10,7 +10,7 @@
 
 | Brief item | Delivered |
 |---|---|
-| Literature / background study | README "Literature in brief" discusses the brief's suggested readings (DNS Challenge, RNNoise, FullSubNet, PoCoNet, WaveNet denoising) and the classical roots (Boll 1979, Ephraim–Malah 1984, Taal et al. 2011), and states why the compact-CNN IRM design point was chosen; the MathWorks denoising example was the implementation reference |
+| Literature / background study | README "Literature in brief" discusses all eight of the brief's suggested readings (DNS Challenge, RNNoise, FullSubNet, dual-signal transformation LSTM, phase-aware U-Net, PoCoNet, Noisy2Noisy, WaveNet denoising) and the classical roots (Boll 1979, Ephraim–Malah 1984, Taal et al. 2011), and states why the compact-CNN IRM design point was chosen; the MathWorks denoising example was the implementation reference |
 | Dataset of noisy/clean speech | VoiceBank-DEMAND (CC BY 4.0), the standard academic benchmark for this task — used instead of the full Microsoft DNS corpus (hundreds of GB); the deviation and its reason are stated in the README. `download_data()` fetches and extracts 824 test pairs + 800 training pairs |
 | Deep learning network for noise suppression | Compact fully-convolutional CNN (~24k parameters) estimating an ideal ratio mask from a log-magnitude spectrogram, Deep Learning Toolbox, noisy-phase resynthesis |
 | Validation, objective | Segmental SNR, log-spectral distance and STOI over the full 824-file standard test set (speakers p232/p257, unseen in training), against two classical baselines |
@@ -27,7 +27,7 @@
 | **CNN (shipped model)** | **5.88** | **11.37** | 0.912 |
 
 - CNN vs noisy input: **+4.36 dB** segmental SNR, **−3.13 dB** LSD.
-- CNN vs strongest baseline (Wiener): +2.89 dB segmental SNR, −1.34 dB LSD.
+- CNN vs strongest baseline (Wiener): +2.89 dB segmental SNR, −1.33 dB LSD.
 - STOI of the CNN output (0.912) is 0.009 **below** the noisy input
   (0.921). This is reported, not hidden: aggressive mask-based
   suppression trained with a mask-MSE objective trades a small amount
@@ -46,7 +46,7 @@ test set; the better one ships.
 | **800 utterances, 4,800 patches, 24 epochs (shipped)** | **5.88** | **11.37** | **0.912** |
 
 Shipped training run: 4,800 patches prepared from 800 utterances,
-24 epochs in ~54 minutes on CPU (MATLAB Online); the training
+24 epochs in ~55 minutes on CPU (MATLAB Online); the training
 progress showed a mini-batch RMSE of ≈ 20 in the last visible
 epochs (20–23 of 24; the session timed out during epoch 24 and the
 run's opening values were lost with it — earlier training runs of
