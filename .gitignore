@@ -18,6 +18,9 @@ reports/metrics_part*.csv
 reports/metrics_summary_part*.csv
 reports/EVALUATION_part*.md
 reports/*_v1.*
+# Exception: the v1 summary is kept as audit evidence for the
+# model-selection comparison in FINAL_SUBMISSION_REPORT.md
+!reports/metrics_summary_v1.csv
 
 # MATLAB temporaries
 *.asv

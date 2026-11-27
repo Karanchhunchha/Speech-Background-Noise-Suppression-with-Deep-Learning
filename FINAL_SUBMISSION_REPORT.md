@@ -38,7 +38,8 @@
 ## Model selection (measured, not assumed)
 
 Two configurations were trained and evaluated on the identical full
-test set; the better one ships.
+test set; the better one ships. (The first configuration's summary
+output is kept as `reports/metrics_summary_v1.csv`.)
 
 | Configuration | SegSNR (dB) | LSD (dB) | STOI |
 |---|---|---|---|
