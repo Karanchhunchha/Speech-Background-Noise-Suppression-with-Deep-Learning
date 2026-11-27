@@ -2,6 +2,8 @@
 
 **MathWorks Excellence in Innovation — Project #193**
 
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=Karanchhunchha/Speech-Background-Noise-Suppression-with-Deep-Learning)
+
 A complete, tested MATLAB solution that removes background noise from
 speech with a compact convolutional neural network, benchmarked against
 two classical enhancers on the standard **VoiceBank-DEMAND** corpus with
@@ -194,7 +196,7 @@ The individual stages are also callable on their own:
 
 ## License
 
-BSD 2-Clause — see `LICENSE`. The committed sample audio is
+MIT — see `LICENSE`. The committed sample audio is
 CC BY 4.0 (VoiceBank-DEMAND; see `data/sample/SOURCE.md`), and the
 full corpus remains under its original Edinburgh DataShare terms.
 
