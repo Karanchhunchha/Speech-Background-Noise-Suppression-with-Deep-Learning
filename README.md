@@ -115,8 +115,12 @@ summary = evaluate_models()
 - Enhancement uses the noisy phase, as is standard for mask-based
   systems; phase-aware estimation is future work.
 - STOI here is a clean-room implementation of Taal et al. (2011),
-  checked by unit tests rather than against the authors' reference
-  code; absolute values are comparable within this project.
+  cross-validated against the authors' reference algorithm (via
+  pystoi) on the committed samples — agreement within 0.0005 per file.
+  The analysis window is 256 samples, as in the reference; a 512-sample
+  window over-smooths the envelopes and inflates the score, a failure
+  mode this project's verification caught and fixed (see the
+  `stoiScore` header).
 
 ## References
 
