@@ -4,6 +4,8 @@
 
 [![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=Karanchhunchha/Speech-Background-Noise-Suppression-with-Deep-Learning)
 
+![MATLAB R2023b+](https://img.shields.io/badge/MATLAB-R2023b%2B-orange) ![Deep Learning Toolbox](https://img.shields.io/badge/Toolbox-Deep%20Learning-blue) ![Tests](https://img.shields.io/badge/tests-25%20passing-brightgreen) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
+
 A complete, tested MATLAB solution that removes background noise from
 speech with a compact convolutional neural network, benchmarked against
 two classical enhancers on the standard **VoiceBank-DEMAND** corpus with
@@ -143,6 +145,31 @@ The individual stages are also callable on their own:
 `run_all_tests()`, `demo_denoise()`, `download_data()`,
 `train_model()`, `evaluate_models()`.
 
+Expected output of the test stage, so success is recognisable on
+sight:
+
+```
+--- TEST SUITE SUMMARY ---
+Passed : 25
+Failed : 0
+Incomplete : 0
+```
+
+## Pipeline
+
+```mermaid
+flowchart LR
+    A["Noisy speech (.wav)"] --> B["STFT — toolbox-free"]
+    B --> C["Spectral subtraction (Boll)"]
+    B --> D["Wiener filter (Ephraim–Malah)"]
+    B --> E["CNN ideal-ratio-mask (this project)"]
+    C --> F["ISTFT"]
+    D --> F
+    E --> F
+    F --> G["Enhanced speech"]
+    G --> H["SegSNR · LSD · STOI"]
+```
+
 ## Repository layout
 
 | Path | Contents |
@@ -170,6 +197,37 @@ The individual stages are also callable on their own:
 - Deep Learning Toolbox (network training/inference)
 - Everything else — STFT, metrics, baselines — is base MATLAB by
   design. Audio Toolbox is **not** required.
+
+### Toolbox integration
+
+| Toolbox | Key functions | Used for | Where |
+|---|---|---|---|
+| Deep Learning Toolbox | `trainNetwork`, `predict`, `convolution2dLayer`, `batchNormalizationLayer`, `regressionLayer` | CNN definition, training and mask inference | `src/dl/` |
+| Base MATLAB (deliberate) | hand-written STFT/ISTFT, spectral subtraction, Wiener filter | DSP core with zero toolbox dependency | `src/audio/`, `src/baselines/` |
+| Base MATLAB (deliberate) | hand-written SegSNR, LSD, STOI (Taal et al. 2011) | Objective metrics; STOI cross-validated against the reference implementation | `src/metrics/` |
+| Base MATLAB | `parquetread`, `websave`, `audioread`/`audiowrite` | Dataset download/extraction and audio I/O | `src/data/`, root scripts |
+
+## Performance (measured)
+
+- **Inference:** 0.173 s to denoise a 1.74 s clip on a MATLAB Online
+  CPU — real-time factor ≈ 0.10, about 10× faster than real time.
+- **Training:** ~55 minutes on CPU for the shipped configuration
+  (800 utterances, 4,800 patches, 24 epochs).
+- **Model size:** ~24k parameters; `models/denoiseNet.mat` is
+  297,335 bytes.
+- **Evaluation:** the full 824-file test set is evaluated by
+  `evaluate_models()` (chunkable via `'StartIndex'`/`'MaxFiles'`).
+
+## Roadmap
+
+- Perceptually weighted training loss (the stated next step for the
+  STOI trade-off; cf. PoCoNet).
+- Phase-aware / complex-mask estimation instead of magnitude-only
+  masking with noisy-phase reuse.
+- Migration from the legacy `trainNetwork` API to `trainnet` when a
+  future MATLAB release requires it.
+- Streaming (frame-by-frame) inference on top of the measured
+  real-time factor.
 
 ## Limitations (stated plainly)
 
