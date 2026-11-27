@@ -15,6 +15,7 @@
 | Deep learning network for noise suppression | Compact fully-convolutional CNN (~24k parameters) estimating an ideal ratio mask from a log-magnitude spectrogram, Deep Learning Toolbox, noisy-phase resynthesis |
 | Validation, objective | Segmental SNR, log-spectral distance and STOI over the full 824-file standard test set (speakers p232/p257, unseen in training), against two classical baselines |
 | Validation, subjective | `demo_denoise()` writes before/after .wav files and spectrogram figures for the committed samples |
+| Single main entry point (hub repository guidelines) | `main()` runs the whole system end to end — tests, demo, evaluation — with `main('Full', true)` adding corpus download and training |
 
 ## Verified results (full 824-file test set)
 

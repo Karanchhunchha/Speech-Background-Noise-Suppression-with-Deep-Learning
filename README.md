@@ -82,12 +82,18 @@ follows at academic scale with VoiceBank-DEMAND. **RNNoise** (Valin,
 2018) showed a small recurrent network combined with classical DSP
 can suppress noise in real time; **FullSubNet** (Hao et al., ICASSP
 2021) fused full-band and sub-band modelling for state-of-the-art
-quality at higher compute; **PoCoNet** (Isik et al., Interspeech
-2020) added frequency-positional embeddings and a perceptually
-biased loss; and **WaveNet-style** models (Rethage et al., ICASSP
-2018) denoise directly in the waveform domain. The classical roots
-are Boll's spectral subtraction and Ephraim–Malah estimation, both
-implemented here as baselines.
+quality at higher compute; the **dual-signal transformation LSTM**
+(Westhausen & Meyer, Interspeech 2020) reached real-time quality
+with a recurrent model on transformed features; the **phase-aware
+U-Net** (Choi et al., Interspeech 2020) modelled phase explicitly
+instead of reusing the noisy phase as this project does; **PoCoNet**
+(Isik et al., Interspeech 2020) added frequency-positional
+embeddings and a perceptually biased loss; **Noisy2Noisy** mapping
+(Alamdari et al., 2021) showed enhancement can be trained from noisy
+pairs alone, with no clean targets; and **WaveNet-style** models
+(Rethage et al., ICASSP 2018) denoise directly in the waveform
+domain. The classical roots are Boll's spectral subtraction and
+Ephraim–Malah estimation, both implemented here as baselines.
 
 This project deliberately implements the **compact CNN
 ideal-ratio-mask** point in that space: it is the strongest design
@@ -114,22 +120,22 @@ a process that caught and fixed a real bug (see
 ## Quick start
 
 ```matlab
-% 1. Tests on a fresh clone (uses only the committed sample data)
-ok = run_all_tests()
+% Single entry point: tests + demo + evaluation, end to end
+main()
 
-% 2. Listening demo on the committed samples
-demo_denoise()
-
-% 3. Full pipeline: download the corpus, train, evaluate
-download_data()
-train_model()
-summary = evaluate_models()
+% Full reproduction from scratch (download, train, evaluate)
+main('Full', true)
 ```
+
+The individual stages are also callable on their own:
+`run_all_tests()`, `demo_denoise()`, `download_data()`,
+`train_model()`, `evaluate_models()`.
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
+| `main.m` | Single entry point: tests → demo → evaluation end to end (`'Full'` adds download + training) |
 | `setup.m` | One-call path setup used by every entry point |
 | `download_data.m` | Fetches VoiceBank-DEMAND 16 kHz (test set + 800 training pairs) |
 | `prepare_training_data.m` | Builds standardised log-magnitude / IRM training patches |

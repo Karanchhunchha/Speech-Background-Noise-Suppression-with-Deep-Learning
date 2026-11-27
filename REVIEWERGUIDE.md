@@ -7,6 +7,12 @@ fastest path to verifying the work.
 ## The 5-minute path
 
 ```matlab
+main()                   % single entry point: tests → demo → evaluation
+```
+
+or stage by stage:
+
+```matlab
 ok = run_all_tests()     % 25 unit tests, sample data only, no downloads
 demo_denoise()           % before/after .wav files + spectrograms in results/demo/
 ```
