@@ -1,0 +1,12 @@
+# Downloaded corpus (large; fetched by download_data.m)
+data/downloads/
+data/voicebank/
+data/training_patches.mat
+
+# Generated demo outputs
+results/
+
+# MATLAB temporaries
+*.asv
+slprj/
+sccprj/
