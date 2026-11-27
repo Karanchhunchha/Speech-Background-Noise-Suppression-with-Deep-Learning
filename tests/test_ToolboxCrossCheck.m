@@ -13,12 +13,23 @@ classdef test_ToolboxCrossCheck < matlab.unittest.TestCase
             rng(7);
             x = randn(16000, 1);
             ours = stft(x, 512, 256);
-            % Note: the toolbox parser rejects 'Centered' together
-            % with 'FrequencyRange', so the range is left at its
-            % default and a two-sided result is sliced to one-sided.
-            theirs = toolboxStft(x, 'Window', hann(512, 'periodic'), ...
+            % Compare transform MATH, not padding conventions: our
+            % stft centres the first frame by zero-padding winLen/2
+            % on both sides. The toolbox's own 'Centered' mode pads
+            % differently (a first comparison on the raw signal
+            % disagreed by >1.5x purely from frame alignment), so
+            % here the toolbox is given the SAME pre-padded signal
+            % with 'Centered', false — frame m then starts at sample
+            % (m-1)*hop+1 of the padded signal in both
+            % implementations, and any remaining difference is a
+            % genuine math difference. (The toolbox parser also
+            % rejects 'Centered' together with 'FrequencyRange', so
+            % the range stays at its default and a two-sided result
+            % is sliced to one-sided.)
+            xp = [zeros(256, 1); x; zeros(256, 1)];
+            theirs = toolboxStft(xp, 'Window', hann(512, 'periodic'), ...
                 'OverlapLength', 256, 'FFTLength', 512, ...
-                'Centered', true);
+                'Centered', false);
             if size(theirs, 1) == 512
                 theirs = theirs(1:257, :);
             end
