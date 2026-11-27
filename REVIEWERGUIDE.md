@@ -29,8 +29,8 @@ summary = evaluate_models()   % rewrites reports/metrics_*.csv and reports/EVALU
 | Claim | Evidence |
 |---|---|
 | The pipeline runs end to end | `run_all_tests()` — 22 tests incl. an end-to-end chain on a real sample pair |
-| The CNN beats the classical baselines | `reports/EVALUATION.md`, `reports/metrics_summary.csv` (means over the full test set), `reports/metrics_per_file.csv` (every file, auditable) |
-| The metrics are trustworthy | `tests/test_Metrics.m`: STOI(x, x) = 1, STOI falls as noise rises, LSD(x, x) = 0, segmental SNR of a perfect estimate = clip maximum |
+| The CNN beats the classical baselines on segmental SNR and LSD (STOI is 0.009 below the noisy input — see the README) | `reports/EVALUATION.md`, `reports/metrics_summary.csv` (means over the full test set), `reports/metrics_per_file.csv` (every file, auditable) |
+| The metrics are trustworthy | `tests/test_Metrics.m`: STOI(x, x) = 1, STOI falls as noise rises, LSD(x, x) = 0, segmental SNR of a perfect estimate = clip maximum. The STOI implementation was additionally cross-validated against the reference algorithm (pystoi): agreement within 0.0005 on all 8 sample pairs — see the `stoiScore` header for the window-length bug this caught |
 | No test-set leakage | Training pairs come only from the corpus's 28-speaker training set; the test set's two speakers (p232, p257) never appear in training. `download_data.m` keeps the splits in separate folders and `prepare_training_data.m` reads only the training folders |
 | The demo is real | `demo_denoise()` regenerates every demo .wav from the committed sample inputs with the committed model |
 
@@ -43,9 +43,10 @@ summary = evaluate_models()   % rewrites reports/metrics_*.csv and reports/EVALU
 - **Percentile noise floor.** Both classical baselines estimate noise
   from the 10th percentile of each frequency bin over time, because
   VoiceBank-DEMAND mixtures do not guarantee a noise-only head segment.
-- **Small network on purpose.** ~24k parameters, 300 training
-  utterances, CPU training in minutes — the whole pipeline is
-  reproducible on a student laptop. Options to scale up are exposed.
+- **Small network on purpose.** ~24k parameters, trained on 800
+  utterances (4,800 patches, 24 epochs, ~55 minutes on CPU) — the
+  whole pipeline is reproducible on a student laptop without a GPU.
+  Options to scale up are exposed.
 - **Honest reporting.** The evaluation script writes per-file metrics,
   not just means, and the README states the limitations (noisy phase,
   compact model, clean-room STOI) next to the results.

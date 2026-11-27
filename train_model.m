@@ -8,16 +8,18 @@ function model = train_model(varargin)
 %   DENOISEWITHNET needs.
 %
 %   Name-value options:
-%     'Epochs'   training epochs (default 12)
+%     'Epochs'   training epochs (default 24)
 %     'Quick'    true for a short smoke run: 60 utterances, 4 crops,
 %                3 epochs (default false)
 %     'NumUtterances' / 'CropsPerUtterance'
-%                patch configuration for a full run (defaults 300 / 6)
+%                patch configuration for a full run (defaults 800 / 6)
+%   The defaults are the shipped model's configuration: 800 utterances,
+%   4,800 patches, 24 epochs (about 55 minutes on CPU in MATLAB Online).
 
     p = inputParser;
-    addParameter(p, 'Epochs', 12);
+    addParameter(p, 'Epochs', 24);
     addParameter(p, 'Quick', false);
-    addParameter(p, 'NumUtterances', 300);
+    addParameter(p, 'NumUtterances', 800);
     addParameter(p, 'CropsPerUtterance', 6);
     parse(p, varargin{:});
 
