@@ -15,6 +15,12 @@ function model = train_model(varargin)
 %                patch configuration for a full run (defaults 800 / 6)
 %     'Seed'     RNG seed for the training shuffle (default 42), so a
 %                repeated run on the same patches is reproducible
+%     'ExcludeSpeakers' speakers to hold out of training (default {};
+%                forwarded to PREPARE_TRAINING_DATA)
+%     'ModelFile' file name under models/ to save to (default
+%                'denoiseNet.mat' — the shipped artifact; Phase-1
+%                candidates use their own names so the shipped model
+%                is never overwritten by an experiment)
 %   The defaults are the shipped model's configuration: 800 utterances,
 %   4,800 patches, 24 epochs (about 55 minutes on CPU in MATLAB Online).
 
@@ -24,7 +30,10 @@ function model = train_model(varargin)
     addParameter(p, 'NumUtterances', 800);
     addParameter(p, 'CropsPerUtterance', 6);
     addParameter(p, 'Seed', 42);
+    addParameter(p, 'ExcludeSpeakers', {});
+    addParameter(p, 'ModelFile', 'denoiseNet.mat');
     parse(p, varargin{:});
+    excludeSpeakers = sort(cellstr(p.Results.ExcludeSpeakers));
 
     rootDir = setup();
     patchFile = fullfile(rootDir, 'data', 'training_patches.mat');
@@ -53,12 +62,18 @@ function model = train_model(varargin)
             else
                 savedWant = saved.patchConfig.NumUtterances;
             end
+            savedExclude = {};
+            if isfield(saved.patchConfig, 'ExcludeSpeakers')
+                savedExclude = sort(cellstr(saved.patchConfig.ExcludeSpeakers));
+            end
             reuse = savedWant == wantUtt && ...
-                saved.patchConfig.CropsPerUtterance == wantCrops;
+                saved.patchConfig.CropsPerUtterance == wantCrops && ...
+                isequal(savedExclude, excludeSpeakers);
         end
     end
     if ~reuse
-        prepare_training_data('NumUtterances', wantUtt, 'CropsPerUtterance', wantCrops);
+        prepare_training_data('NumUtterances', wantUtt, 'CropsPerUtterance', wantCrops, ...
+            'ExcludeSpeakers', excludeSpeakers);
     end
     data = load(patchFile, 'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen');
 
@@ -87,6 +102,7 @@ function model = train_model(varargin)
         'fs', 16000);
     modelDir = fullfile(rootDir, 'models');
     if ~exist(modelDir, 'dir'); mkdir(modelDir); end
-    save(fullfile(modelDir, 'denoiseNet.mat'), 'model', '-v7.3');
-    fprintf('Saved model to %s\n', fullfile(modelDir, 'denoiseNet.mat'));
+    modelPath = fullfile(modelDir, p.Results.ModelFile);
+    save(modelPath, 'model', '-v7.3');
+    fprintf('Saved model to %s\n', modelPath);
 end

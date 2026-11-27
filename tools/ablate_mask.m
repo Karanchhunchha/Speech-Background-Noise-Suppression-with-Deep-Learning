@@ -11,33 +11,42 @@ function results = ablate_mask(varargin)
 %   evaluated exactly once on the full test set.
 %
 %   Name-value options:
-%     'Speaker'  - validation speaker id (default 'p228')
+%     'Speaker'  - validation speaker id, or a cell array of ids whose
+%                  files are pooled (default 'p228')
 %     'MaxFiles' - cap on validation files (default 100)
 %     'DataRoot' - corpus root (default 'data/voicebank')
+%     'ModelFile' - model to evaluate (default 'models/denoiseNet.mat';
+%                  Phase-1 candidates pass their own file)
 
     p = inputParser;
-    p.addParameter('Speaker', 'p228', @(x) ischar(x) || isstring(x));
+    p.addParameter('Speaker', 'p228', @(x) ischar(x) || isstring(x) || iscell(x));
     p.addParameter('MaxFiles', 100, @(x) isscalar(x) && x > 0);
     p.addParameter('DataRoot', fullfile('data', 'voicebank'), @ischar);
+    p.addParameter('ModelFile', fullfile('models', 'denoiseNet.mat'), @ischar);
     p.parse(varargin{:});
-    speaker = char(p.Results.Speaker);
+    speakers = cellstr(p.Results.Speaker);
+    speaker = strjoin(speakers, '+');
     maxFiles = p.Results.MaxFiles;
     root = p.Results.DataRoot;
 
     setup();
-    model = loadDenoiseModel(fullfile('models', 'denoiseNet.mat'));
+    model = loadDenoiseModel(p.Results.ModelFile);
 
     cleanDir = fullfile(root, 'clean_train');
     noisyDir = fullfile(root, 'noisy_train');
-    all = dir(fullfile(cleanDir, [speaker '_*.wav']));
-    if isempty(all)
+    names = {};
+    for s = 1:numel(speakers)
+        d = dir(fullfile(cleanDir, [speakers{s} '_*.wav']));
+        names = [names, {d.name}]; %#ok<AGROW>
+    end
+    if isempty(names)
         error('ablate_mask:NoValidationFiles', ...
             'No training files for speaker %s under %s.', speaker, cleanDir);
     end
-    names = sort({all.name});
+    names = sort(names);
     names = names(1:min(maxFiles, numel(names)));
-    fprintf('Validation: %d files, speaker %s (training-corpus holdout)\n', ...
-        numel(names), speaker);
+    fprintf('Validation: %d files, speaker %s (training-corpus holdout), model %s\n', ...
+        numel(names), speaker, p.Results.ModelFile);
 
     floors = [0, 0.05, 0.1, 0.2];
     exponents = [1, 0.7];

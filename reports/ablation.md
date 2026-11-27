@@ -38,6 +38,38 @@ not close the gap → Phase 1b (retraining: more speakers/data and a
 perceptual/spectral loss) is the real lever, ranked on a genuinely
 speaker-disjoint validation set built from an extra training shard.
 
+## Step 1a (continued) — genuinely held-out validation
+
+Training shard 1 was downloaded (SHA-256 verified) and extracted:
+2,315 further pairs, 7 new speakers (10 total, 3,115 files). The
+shipped model never saw these speakers. Validation: 100 files of
+speaker **p236**:
+
+| Config | SegSNR (dB) | LSD (dB) | STOI |
+|---|---|---|---|
+| noisy (reference) | 2.97 | 18.97 | 0.8109 |
+| floor 0.00, exp 1.0 (shipped) | 3.90 | 14.25 | 0.7997 |
+| floor 0.00, exp 0.7 | 4.20 | 15.25 | 0.8071 |
+| floor 0.05, exp 0.7 | 4.21 | 15.25 | 0.8072 |
+| floor 0.10, exp 0.7 | 4.22 | 15.25 | 0.8074 |
+| floor 0.20, exp 0.7 | 4.21 | 15.30 | 0.8079 |
+
+(exp 1.0 rows at floors 0.05–0.20 sit between the shipped row and
+these; full table in the run log.) Two findings: (1) on truly
+held-out data the soft-suppression configs (exp 0.7) beat the shipped
+configuration on **both** SegSNR and STOI — the p228 ranking did not
+generalise, which is exactly why this second validation exists;
+(2) even the best config remains 0.003 below the noisy STOI, so
+retraining is still required. Candidate inference configuration
+carried forward: **floor 0.10, exp 0.7** (best SegSNR, near-best
+STOI); floor 0.20/exp 0.7 is the STOI-maximal variant.
+
 ## Step 1b — retraining (in progress)
+
+Protocol: candidates train with validation speakers **p236 and
+p254 excluded** (2,584 files of 8 speakers remain available) and are
+ranked on pooled p236+p254 validation against the shipped model
+under identical inference configurations. The winner is evaluated
+once on the full test set.
 
 *(Results appended as runs complete; failed runs are recorded too.)*
