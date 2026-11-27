@@ -35,10 +35,12 @@ function model = train_model(varargin)
     end
     reuse = false;
     if exist(patchFile, 'file')
-        saved = load(patchFile, 'patchConfig');
-        reuse = isfield(saved, 'patchConfig') && ...
-            saved.patchConfig.NumUtterances == wantUtt && ...
-            saved.patchConfig.CropsPerUtterance == wantCrops;
+        info = whos('-file', patchFile, 'patchConfig');
+        if ~isempty(info)
+            saved = load(patchFile, 'patchConfig');
+            reuse = saved.patchConfig.NumUtterances == wantUtt && ...
+                saved.patchConfig.CropsPerUtterance == wantCrops;
+        end
     end
     if ~reuse
         prepare_training_data('NumUtterances', wantUtt, 'CropsPerUtterance', wantCrops);

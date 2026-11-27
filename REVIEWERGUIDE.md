@@ -20,6 +20,8 @@ Then read `reports/EVALUATION.md` for the verified objective results
 download_data()          % VoiceBank-DEMAND: 824 test pairs + 800 training pairs
 train_model()            % builds patches, trains the CNN, saves models/denoiseNet.mat
 summary = evaluate_models()   % rewrites reports/metrics_*.csv and reports/EVALUATION.md
+% (For very long evaluations, EVALUATE_MODELS accepts 'StartIndex'/'MaxFiles'
+%  chunks; MERGE_EVALUATION combines the chunk outputs into the final reports.)
 ```
 
 ## Where the evidence lives
