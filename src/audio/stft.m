@@ -9,6 +9,12 @@ function [S, numFrames] = stft(x, winLen, hop)
 %   S has size (winLen/2+1) x numFrames and contains the one-sided
 %   spectrum. Only base MATLAB (fft) is used.
 
+    if mod(winLen, 2) ~= 0 || winLen < 2
+        error('stft:BadWinLen', 'winLen must be a positive even integer.');
+    end
+    if hop < 1 || hop > winLen
+        error('stft:BadHop', 'hop must be between 1 and winLen.');
+    end
     x = x(:);
     win = hannPeriodic(winLen);
     pad = winLen / 2;

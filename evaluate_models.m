@@ -19,6 +19,13 @@ function summary = evaluate_models(varargin)
     addParameter(p, 'MaxFiles', Inf);
     addParameter(p, 'StartIndex', 1);
     parse(p, varargin{:});
+    if ~(isscalar(p.Results.StartIndex) && p.Results.StartIndex >= 1 && ...
+            p.Results.StartIndex == floor(p.Results.StartIndex))
+        error('evaluate_models:BadStartIndex', 'StartIndex must be a positive integer.');
+    end
+    if ~(isscalar(p.Results.MaxFiles) && p.Results.MaxFiles >= 1)
+        error('evaluate_models:BadMaxFiles', 'MaxFiles must be at least 1 (or Inf).');
+    end
 
     rootDir = setup();
     testClean = fullfile(rootDir, 'data', 'voicebank', 'clean_test');
@@ -54,7 +61,15 @@ function summary = evaluate_models(varargin)
     stoi = zeros(numel(pairs), numMethods);
     for i = 1:numel(pairs)
         [clean, fs] = audioread(pairs(i).cleanFile);
-        [noisy, ~] = audioread(pairs(i).noisyFile);
+        [noisy, fsNoisy] = audioread(pairs(i).noisyFile);
+        if size(clean, 2) > 1 || size(noisy, 2) > 1
+            error('evaluate_models:StereoNotSupported', ...
+                'Pair %s has more than one channel; this project expects mono audio.', pairs(i).id);
+        end
+        if fsNoisy ~= fs
+            error('evaluate_models:RateMismatch', ...
+                'Pair %s: clean is %d Hz but noisy is %d Hz.', pairs(i).id, fs, fsNoisy);
+        end
         n = min(numel(clean), numel(noisy));
         clean = clean(1:n);
         noisy = noisy(1:n);
@@ -75,6 +90,23 @@ function summary = evaluate_models(varargin)
         end
     end
 
+    % A file whose metric is not finite (e.g. STOI is undefined for a
+    % file too short to fill one 30-frame segment) must not silently
+    % poison the summary: report it and average over the rest.
+    badFiles = {};
+    for m = 1:numMethods
+        bad = ~isfinite(seg(:, m)) | ~isfinite(lsd(:, m)) | ~isfinite(stoi(:, m));
+        if any(bad)
+            badFiles = [badFiles, {pairs(bad).id}]; %#ok<AGROW>
+        end
+    end
+    if ~isempty(badFiles)
+        badUnique = unique(string(badFiles));
+        warning('evaluate_models:NonFiniteMetrics', ...
+            'Non-finite metrics for %d file(s) (%s); summary statistics omit them.', ...
+            numel(badUnique), strjoin(badUnique, ', '));
+    end
+
     reportDir = fullfile(rootDir, 'reports');
     if ~exist(reportDir, 'dir'); mkdir(reportDir); end
 
@@ -89,14 +121,15 @@ function summary = evaluate_models(varargin)
 
     summary = table();
     summary.Method = string(methodNames)';
-    summary.SegSNR_dB = mean(seg, 1)';
-    summary.SegSNR_Std = std(seg, 0, 1)';
-    summary.LSD_dB = mean(lsd, 1)';
-    summary.STOI = mean(stoi, 1)';
-    summary.STOI_Std = std(stoi, 0, 1)';
+    summary.SegSNR_dB = mean(seg, 1, 'omitnan')';
+    summary.SegSNR_Std = std(seg, 0, 1, 'omitnan')';
+    summary.LSD_dB = mean(lsd, 1, 'omitnan')';
+    summary.STOI = mean(stoi, 1, 'omitnan')';
+    summary.STOI_Std = std(stoi, 0, 1, 'omitnan')';
     writetable(summary, fullfile(reportDir, 'metrics_summary.csv'));
 
     fid = fopen(fullfile(reportDir, 'EVALUATION.md'), 'w');
+    fidCleanup = onCleanup(@() fclose(fid));
     fprintf(fid, '# Objective evaluation\n\n');
     fprintf(fid, 'Data: %s. Files evaluated: %d. Metrics are means over files ', dataNote, numel(pairs));
     fprintf(fid, '(segmental SNR and STOI: higher is better; LSD: lower is better).\n\n');
@@ -110,7 +143,7 @@ function summary = evaluate_models(varargin)
         fprintf(fid, '\nSegmental-SNR improvement of the CNN over the noisy input: %.2f dB.\n', ...
             summary.SegSNR_dB(4) - summary.SegSNR_dB(1));
     end
-    fclose(fid);
+    clear fidCleanup;
 
     disp(summary);
 end

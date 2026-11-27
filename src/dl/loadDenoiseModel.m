@@ -11,4 +11,11 @@ function model = loadDenoiseModel(modelFile)
             'File %s does not contain a denoising model.', modelFile);
     end
     model = data.model;
+    required = {'net', 'mu', 'sigma', 'winLen', 'hop', 'segLen'};
+    for k = 1:numel(required)
+        if ~isfield(model, required{k})
+            error('loadDenoiseModel:BadArtifact', ...
+                'Model in %s is missing the field "%s".', modelFile, required{k});
+        end
+    end
 end

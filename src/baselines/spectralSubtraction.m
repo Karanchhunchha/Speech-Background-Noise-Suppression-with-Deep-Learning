@@ -5,8 +5,9 @@ function enhanced = spectralSubtraction(noisy, fs)
 %   the estimated noise power spectrum is subtracted (with
 %   over-subtraction factor alpha = 2 and spectral floor beta = 0.01 of
 %   the noisy power, the common operating point) and the result is
-%   resynthesised with the noisy phase. fs is accepted for interface
-%   consistency and is currently unused.
+%   resynthesised with the noisy phase. fs is validated (positive
+%   scalar) for interface consistency but otherwise unused — the
+%   framing is defined in samples.
 
     if ~(isscalar(fs) && fs > 0)
         error('spectralSubtraction:BadFs', 'fs must be a positive scalar.');

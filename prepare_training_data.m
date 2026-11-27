@@ -11,12 +11,12 @@ function stats = prepare_training_data(varargin)
 %   data/training_patches.mat.
 %
 %   Name-value options:
-%     'NumUtterances'  pairs to use (default 300)
+%     'NumUtterances'  pairs to use (default 800, matching TRAIN_MODEL)
 %     'CropsPerUtterance' random 64-frame crops per pair (default 6)
 %     'Seed'           RNG seed for reproducibility (default 42)
 
     p = inputParser;
-    addParameter(p, 'NumUtterances', 300);
+    addParameter(p, 'NumUtterances', 800);
     addParameter(p, 'CropsPerUtterance', 6);
     addParameter(p, 'Seed', 42);
     parse(p, varargin{:});
@@ -54,6 +54,10 @@ function stats = prepare_training_data(varargin)
             error('prepare_training_data:BadRate', ...
                 'Expected 16 kHz audio, got %d/%d Hz for %s.', fsC, fsN, pairs(i).id);
         end
+        if size(clean, 2) > 1 || size(noisy, 2) > 1
+            error('prepare_training_data:StereoNotSupported', ...
+                'Pair %s has more than one channel; this project expects mono audio.', pairs(i).id);
+        end
         n = min(numel(clean), numel(noisy));
         clean = clean(1:n);
         noisy = noisy(1:n);
@@ -78,15 +82,24 @@ function stats = prepare_training_data(varargin)
             YTrain(:, :, 1, out) = single(irm(:, cols));
         end
     end
+    if out == 0
+        error('prepare_training_data:NoUsablePairs', ...
+            ['No utterance produced a full %d-frame segment, so there is ' ...
+             'nothing to train on. Check the training folders.'], segLen);
+    end
     XTrain = XTrain(:, :, :, 1:out);
     YTrain = YTrain(:, :, :, 1:out);
     mu = logSum / logCount;
     sigma = sqrt(logSqSum / logCount - mu ^ 2);
+    if ~isfinite(mu) || ~isfinite(sigma) || sigma <= 0
+        error('prepare_training_data:BadStats', ...
+            'Degenerate patch statistics (mu=%g, sigma=%g); the training audio looks silent or corrupt.', mu, sigma);
+    end
     XTrain = (XTrain - single(mu)) ./ single(sigma);
 
     stats = struct('NumPatches', out, 'NumUtterances', numUtt, 'Mu', mu, 'Sigma', sigma);
     patchConfig = struct('NumUtterances', numUtt, 'CropsPerUtterance', cropsPerUtt, ...
-        'SegLen', segLen);
+        'SegLen', segLen, 'RequestedUtterances', p.Results.NumUtterances);
     save(fullfile(rootDir, 'data', 'training_patches.mat'), ...
         'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen', 'patchConfig', '-v7.3');
     fprintf('Prepared %d patches from %d utterances (mu=%.4f, sigma=%.4f).\n', ...

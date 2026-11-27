@@ -2,9 +2,8 @@ function y = resampleFFT(x, fsIn, fsOut)
 %RESAMPLEFFT Band-limited resampling by spectrum truncation/padding.
 %   y = RESAMPLEFFT(x, fsIn, fsOut) resamples the signal x from fsIn to
 %   fsOut by truncating or zero-padding its DFT. This is exact for
-%   band-limited signals and needs no toolbox. It is used to bring
-%   48 kHz VoiceBank-DEMAND audio to 16 kHz and inside the STOI metric
-%   (which is defined at 10 kHz).
+%   band-limited signals and needs no toolbox. Its caller in this
+%   project is the STOI metric, which is defined at 10 kHz.
 
     x = x(:);
     if fsIn == fsOut

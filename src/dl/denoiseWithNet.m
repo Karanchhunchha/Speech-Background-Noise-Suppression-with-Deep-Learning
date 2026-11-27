@@ -6,9 +6,18 @@ function enhanced = denoiseWithNet(noisy, fs, model)
 %   frames, the predicted ideal-ratio masks are averaged over the
 %   overlaps and clipped to [0, 1], and the signal is resynthesised
 %   with the noisy phase.
+%
+%   Models in this project are trained on 16 kHz audio (the training
+%   pipeline enforces that rate), so fs must be 16000: applying the
+%   mask statistics learned at one rate to audio sampled at another
+%   would silently produce wrong results, and is rejected instead.
 
     if ~(isscalar(fs) && fs > 0)
         error('denoiseWithNet:BadFs', 'fs must be a positive scalar.');
+    end
+    if fs ~= 16000
+        error('denoiseWithNet:BadFs', ...
+            'This model was trained at 16 kHz; got fs = %g Hz.', fs);
     end
     winLen = model.winLen;
     hop = model.hop;

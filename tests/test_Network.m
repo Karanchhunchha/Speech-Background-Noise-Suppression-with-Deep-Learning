@@ -58,5 +58,27 @@ classdef test_Network < matlab.unittest.TestCase
             testCase.verifyEqual(numel(out), numel(noisy));
             testCase.verifyTrue(all(isfinite(out)));
         end
+
+        function testDenoiseWithNetShortFile(testCase)
+            % A file shorter than one 64-frame segment exercises the
+            % zero-padding branch of DENOISEWITHNET: the output must
+            % still match the input length and stay finite.
+            rootDir = fileparts(fileparts(mfilename('fullpath')));
+            pairs = listPairs(fullfile(rootDir, 'data', 'sample', 'clean'), ...
+                              fullfile(rootDir, 'data', 'sample', 'noisy'));
+            [noisy, fs] = audioread(pairs(1).noisyFile);
+            noisy = noisy(1:2000);
+            rng(5);
+            X = randn(257, 64, 1, 16, 'single');
+            Y = rand(257, 64, 1, 16, 'single');
+            opts = trainingOptions('adam', 'MaxEpochs', 1, 'MiniBatchSize', 8, ...
+                'Verbose', false, 'Plots', 'none', 'ExecutionEnvironment', 'cpu');
+            net = trainNetwork(X, Y, buildDenoiseNet(257, 64), opts);
+            model = struct('net', net, 'mu', 0, 'sigma', 1, ...
+                'winLen', 512, 'hop', 256, 'segLen', 64);
+            out = denoiseWithNet(noisy, fs, model);
+            testCase.verifyEqual(numel(out), numel(noisy));
+            testCase.verifyTrue(all(isfinite(out)));
+        end
     end
 end

@@ -1,17 +1,25 @@
-function summary = merge_evaluation()
+function summary = merge_evaluation(reportDir)
 %MERGE_EVALUATION Combine chunked evaluation outputs into final reports.
 %   summary = MERGE_EVALUATION() reads every reports/metrics_part*.csv
 %   file (the per-file outputs of chunked EVALUATE_MODELS runs, renamed
 %   between chunks so later chunks do not overwrite earlier ones),
 %   concatenates the per-file rows, and writes the final reports in
-%   exactly the format EVALUATE_MODELS produces:
-%   reports/metrics_per_file.csv, reports/metrics_summary.csv and
-%   reports/EVALUATION.md. Chunked evaluation exists so the full
-%   824-file test set can be evaluated across several sessions without
-%   losing partial results.
+%   the format EVALUATE_MODELS produces: reports/metrics_per_file.csv,
+%   reports/metrics_summary.csv and reports/EVALUATION.md. Chunked
+%   evaluation exists so the full 824-file test set can be evaluated
+%   across several sessions without losing partial results.
+%
+%   summary = MERGE_EVALUATION(reportDir) merges the chunks in another
+%   folder instead (used by the unit tests).
+%
+%   Safety: the merge refuses to combine chunks whose File rows
+%   overlap — averaging two different runs' halves of the same files
+%   into one table would silently fabricate a result.
 
-    rootDir = setup();
-    reportDir = fullfile(rootDir, 'reports');
+    if nargin < 1 || isempty(reportDir)
+        rootDir = setup();
+        reportDir = fullfile(rootDir, 'reports');
+    end
     listing = dir(fullfile(reportDir, 'metrics_part*.csv'));
     names = {listing.name};
     names = names(~contains(names, 'summary'));
@@ -24,6 +32,12 @@ function summary = merge_evaluation()
         parts{i} = readtable(fullfile(reportDir, names{i}));
     end
     allRows = vertcat(parts{:});
+    if numel(unique(allRows.File)) ~= height(allRows)
+        error('merge_evaluation:OverlappingChunks', ...
+            ['The chunk files contain duplicate File rows (%d rows, %d unique). ' ...
+             'Refusing to merge: the chunks must cover disjoint file sets from ONE evaluation run.'], ...
+            height(allRows), numel(unique(allRows.File)));
+    end
     writetable(allRows, fullfile(reportDir, 'metrics_per_file.csv'));
 
     methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'CNN'};
@@ -46,11 +60,11 @@ function summary = merge_evaluation()
         segCol = allRows.(['SegSNR_' methodNames{m}]);
         lsdCol = allRows.(['LSD_' methodNames{m}]);
         stoiCol = allRows.(['STOI_' methodNames{m}]);
-        segMean(m) = mean(segCol);
-        segStd(m) = std(segCol);
-        lsdMean(m) = mean(lsdCol);
-        stoiMean(m) = mean(stoiCol);
-        stoiStd(m) = std(stoiCol);
+        segMean(m) = mean(segCol, 'omitnan');
+        segStd(m) = std(segCol, 'omitnan');
+        lsdMean(m) = mean(lsdCol, 'omitnan');
+        stoiMean(m) = mean(stoiCol, 'omitnan');
+        stoiStd(m) = std(stoiCol, 'omitnan');
     end
     summary.SegSNR_dB = segMean;
     summary.SegSNR_Std = segStd;
@@ -60,8 +74,13 @@ function summary = merge_evaluation()
     writetable(summary, fullfile(reportDir, 'metrics_summary.csv'));
 
     fid = fopen(fullfile(reportDir, 'EVALUATION.md'), 'w');
+    fidCleanup = onCleanup(@() fclose(fid));
     fprintf(fid, '# Objective evaluation\n\n');
-    fprintf(fid, 'Data: VoiceBank-DEMAND standard test set (data/voicebank). ');
+    if height(allRows) == 824
+        fprintf(fid, 'Data: VoiceBank-DEMAND standard test set (data/voicebank). ');
+    else
+        fprintf(fid, 'Data: chunked evaluation output. ');
+    end
     fprintf(fid, 'Files evaluated: %d (combined from %d chunked runs). ', height(allRows), numel(names));
     fprintf(fid, 'Metrics are means over files (segmental SNR and STOI: higher is better; LSD: lower is better).\n\n');
     fprintf(fid, '| Method | Segmental SNR (dB) | LSD (dB) | STOI |\n');
@@ -71,11 +90,12 @@ function summary = merge_evaluation()
             segMean(m), lsdMean(m), stoiMean(m));
     end
     cnnIdx = find(strcmp(methodNames, 'CNN'), 1);
-    if ~isempty(cnnIdx)
+    noisyIdx = find(strcmp(methodNames, 'Noisy'), 1);
+    if ~isempty(cnnIdx) && ~isempty(noisyIdx)
         fprintf(fid, '\nSegmental-SNR improvement of the CNN over the noisy input: %.2f dB.\n', ...
-            segMean(cnnIdx) - segMean(1));
+            segMean(cnnIdx) - segMean(noisyIdx));
     end
-    fclose(fid);
+    clear fidCleanup;
     fprintf('Merged %d chunk files into final reports (%d files total).\n', ...
         numel(names), height(allRows));
     disp(summary);

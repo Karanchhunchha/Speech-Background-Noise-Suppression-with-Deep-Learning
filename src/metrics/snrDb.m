@@ -3,7 +3,8 @@ function v = snrDb(clean, est)
 %   v = SNRDB(clean, est) returns 10*log10(||clean||^2 / ||clean-est||^2)
 %   in dB. The signals are truncated to the shorter length. The error
 %   power is floored at eps, so a perfect estimate returns a very
-%   large finite value (about 195 dB for unit-variance signals).
+%   large finite value (10*log10(sum(clean.^2)/eps) — about 195 dB
+%   for a unit-variance signal of typical utterance length).
 
     n = min(numel(clean), numel(est));
     c = clean(1:n);

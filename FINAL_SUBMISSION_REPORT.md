@@ -47,9 +47,11 @@ test set; the better one ships.
 Shipped training run: 4,800 patches prepared from 800 utterances,
 24 epochs in ~54 minutes on CPU (MATLAB Online); the training
 progress showed a mini-batch RMSE of ≈ 20 in the last visible
-epochs, down from ≈ 122 at the start (the session timed out during
-epoch 24, but the saved artifact was verified on disk afterwards:
-correct patch statistics, and it produced the evaluation below).
+epochs (20–23 of 24; the session timed out during epoch 24 and the
+run's opening values were lost with it — earlier training runs of
+this pipeline started at ≈ 122). The saved artifact was verified on
+disk afterwards: correct patch statistics, and it produced the
+evaluation below.
 Artifact `models/denoiseNet.mat` (297,335 bytes). `train_model()`
 defaults now match this configuration exactly.
 
@@ -93,3 +95,6 @@ summary = evaluate_models()   % rewrites reports/ from the full test set
 - PESQ is not reported: it requires the Audio Toolbox / a licensed
   implementation, and this project is deliberately toolbox-free
   outside the Deep Learning Toolbox.
+- Training uses the `trainNetwork` API (current and verified on
+  R2026b); MathWorks now recommends `trainnet` for new code, so a
+  future MATLAB release may require that migration.

@@ -13,6 +13,8 @@ function model = train_model(varargin)
 %                3 epochs (default false)
 %     'NumUtterances' / 'CropsPerUtterance'
 %                patch configuration for a full run (defaults 800 / 6)
+%     'Seed'     RNG seed for the training shuffle (default 42), so a
+%                repeated run on the same patches is reproducible
 %   The defaults are the shipped model's configuration: 800 utterances,
 %   4,800 patches, 24 epochs (about 55 minutes on CPU in MATLAB Online).
 
@@ -21,6 +23,7 @@ function model = train_model(varargin)
     addParameter(p, 'Quick', false);
     addParameter(p, 'NumUtterances', 800);
     addParameter(p, 'CropsPerUtterance', 6);
+    addParameter(p, 'Seed', 42);
     parse(p, varargin{:});
 
     rootDir = setup();
@@ -40,7 +43,17 @@ function model = train_model(varargin)
         info = whos('-file', patchFile, 'patchConfig');
         if ~isempty(info)
             saved = load(patchFile, 'patchConfig');
-            reuse = saved.patchConfig.NumUtterances == wantUtt && ...
+            % Compare against the REQUESTED utterance count when the
+            % patch file records it: the stored NumUtterances is the
+            % actual (possibly corpus-clamped) count, and comparing
+            % against that would rebuild the patches on every call
+            % whenever the corpus holds fewer pairs than requested.
+            if isfield(saved.patchConfig, 'RequestedUtterances')
+                savedWant = saved.patchConfig.RequestedUtterances;
+            else
+                savedWant = saved.patchConfig.NumUtterances;
+            end
+            reuse = savedWant == wantUtt && ...
                 saved.patchConfig.CropsPerUtterance == wantCrops;
         end
     end
@@ -66,10 +79,12 @@ function model = train_model(varargin)
         'Verbose', true, ...
         'Plots', 'none');
     fprintf('Training on %d patches for %d epochs...\n', size(data.XTrain, 4), epochs);
+    rng(p.Results.Seed);
     net = trainNetwork(data.XTrain, data.YTrain, layers, options);
 
     model = struct('net', net, 'mu', data.mu, 'sigma', data.sigma, ...
-        'winLen', data.winLen, 'hop', data.hop, 'segLen', data.segLen);
+        'winLen', data.winLen, 'hop', data.hop, 'segLen', data.segLen, ...
+        'fs', 16000);
     modelDir = fullfile(rootDir, 'models');
     if ~exist(modelDir, 'dir'); mkdir(modelDir); end
     save(fullfile(modelDir, 'denoiseNet.mat'), 'model', '-v7.3');

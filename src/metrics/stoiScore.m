@@ -20,7 +20,8 @@ function d = stoiScore(clean, est, fs)
 %   5. For every band and every 30-frame segment, the degraded envelope
 %      is energy-normalised to the clean envelope, clipped at a -15 dB
 %      signal-to-distortion bound, and Pearson-correlated with it.
-%      STOI is the mean correlation, in [0, 1]; STOI(x, x) = 1.
+%      STOI is the mean correlation — at most 1, and in [0, 1] for
+%      degraded speech in practice; STOI(x, x) = 1.
 %
 %   Clean-room implementation from the paper, included so the project
 %   needs no toolbox. It was cross-validated against pystoi, a
@@ -31,6 +32,8 @@ function d = stoiScore(clean, est, fs)
 %   score (0.9997 on the same file); the window length is load-bearing
 %   and is covered by the unit tests' range checks.
 
+    clean = clean(:);
+    est = est(:);
     n = min(numel(clean), numel(est));
     clean = clean(1:n);
     est = est(1:n);

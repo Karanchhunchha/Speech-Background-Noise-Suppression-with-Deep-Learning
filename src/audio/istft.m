@@ -7,6 +7,12 @@ function x = istft(S, winLen, hop, outLen)
 %   window-envelope normalisation makes the reconstruction exact for
 %   any hop that divides winLen).
 
+    if mod(winLen, 2) ~= 0 || winLen < 2
+        error('istft:BadWinLen', 'winLen must be a positive even integer.');
+    end
+    if hop < 1 || hop > winLen
+        error('istft:BadHop', 'hop must be between 1 and winLen.');
+    end
     numFrames = size(S, 2);
     win = hannPeriodic(winLen);
     pad = winLen / 2;
@@ -25,6 +31,10 @@ function x = istft(S, winLen, hop, outLen)
     end
     nz = env > 1e-12;
     buf(nz) = buf(nz) ./ env(nz);
+    if pad + outLen > bufLen
+        error('istft:BadLength', ...
+            'outLen %d exceeds the reconstructed buffer (%d samples).', outLen, bufLen - pad);
+    end
     % Remove the centre-padding added by STFT and restore the length.
     x = buf(pad + 1:pad + outLen);
 end

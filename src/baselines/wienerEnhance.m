@@ -5,8 +5,9 @@ function enhanced = wienerEnhance(noisy, fs)
 %   of Ephraim & Malah (1984): the a priori SNR follows the previous
 %   frame's posterior SNR with smoothing factor 0.98, which suppresses
 %   the musical noise that plain spectral subtraction leaves behind.
-%   The noise power comes from NOISEESTIMATE. fs is accepted for
-%   interface consistency and is currently unused.
+%   The noise power comes from NOISEESTIMATE. fs is validated
+%   (positive scalar) for interface consistency but otherwise unused
+%   — the framing is defined in samples.
 
     if ~(isscalar(fs) && fs > 0)
         error('wienerEnhance:BadFs', 'fs must be a positive scalar.');

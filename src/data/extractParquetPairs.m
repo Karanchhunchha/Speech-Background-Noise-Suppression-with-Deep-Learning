@@ -54,6 +54,7 @@ function writeBytes(file, bytes)
     if fid < 0
         error('extractParquetPairs:WriteFailed', 'Cannot open %s for writing.', file);
     end
+    cleaner = onCleanup(@() fclose(fid));
     fwrite(fid, bytes, 'uint8');
-    fclose(fid);
+    clear cleaner;
 end

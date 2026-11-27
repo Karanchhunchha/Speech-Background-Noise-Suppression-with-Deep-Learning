@@ -32,8 +32,11 @@ function download_data()
     trainClean = fullfile(vbRoot, 'clean_train');
     trainNoisy = fullfile(vbRoot, 'noisy_train');
 
-    if numel(dir(fullfile(testClean, '*.wav'))) >= 800 && ...
-       numel(dir(fullfile(trainClean, '*.wav'))) >= 100
+    % "Already present" means complete matched pairs in all four
+    % folders — counting clean files alone would certify a
+    % half-extracted corpus as done.
+    if numel(listPairs(testClean, testNoisy)) >= 824 && ...
+       numel(listPairs(trainClean, trainNoisy)) >= 800
         fprintf('VoiceBank-DEMAND data already present under %s\n', vbRoot);
         return;
     end

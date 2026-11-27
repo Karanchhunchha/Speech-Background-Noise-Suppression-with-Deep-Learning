@@ -26,6 +26,9 @@ function demo_denoise(varargin)
     haveModel = exist(modelFile, 'file') == 2;
     if haveModel
         model = loadDenoiseModel(modelFile);
+    else
+        fprintf(['No trained model found; the demo will contain the ' ...
+            'classical methods only. Run train_model() first for the CNN output.\n']);
     end
 
     outDir = fullfile(rootDir, 'results', 'demo');
@@ -33,7 +36,15 @@ function demo_denoise(varargin)
 
     for i = 1:numel(pairs)
         [clean, fs] = audioread(pairs(i).cleanFile);
-        [noisy, ~] = audioread(pairs(i).noisyFile);
+        [noisy, fsNoisy] = audioread(pairs(i).noisyFile);
+        if size(clean, 2) > 1 || size(noisy, 2) > 1
+            error('demo_denoise:StereoNotSupported', ...
+                'Pair %s has more than one channel; this project expects mono audio.', pairs(i).id);
+        end
+        if fsNoisy ~= fs
+            error('demo_denoise:RateMismatch', ...
+                'Pair %s: clean is %d Hz but noisy is %d Hz.', pairs(i).id, fs, fsNoisy);
+        end
         n = min(numel(clean), numel(noisy));
         clean = clean(1:n);
         noisy = noisy(1:n);
@@ -52,6 +63,7 @@ function demo_denoise(varargin)
             titles{end + 1} = 'CNN (this project)';
         end
         fig = figure('Visible', 'off', 'Position', [100 100 900 700]);
+        figCleanup = onCleanup(@() close(fig));
         for k = 1:numel(panels)
             subplot(numel(panels), 1, k);
             S = stft(panels{k}, 512, 256);
@@ -63,7 +75,7 @@ function demo_denoise(varargin)
         end
         xlabel('Frame');
         saveas(fig, fullfile(outDir, pairs(i).id + "_spectrograms.png"));
-        close(fig);
+        clear figCleanup;
         fprintf('Demo outputs for %s written to %s\n', pairs(i).id, outDir);
     end
 end
