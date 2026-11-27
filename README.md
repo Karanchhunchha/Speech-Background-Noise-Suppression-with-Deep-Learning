@@ -25,7 +25,9 @@ listening demo.
 > of aggressive mask-based suppression trained with a mask-MSE
 > objective, stated plainly rather than hidden.
 >
-> Test suite: **22 unit tests, all passing** — run `run_all_tests()`.
+> Test suite: **25 unit tests, all passing** — run `run_all_tests()`.
+> Inference speed (measured): 0.17 s to denoise a 1.74 s clip on a
+> MATLAB Online CPU — about 10× faster than real time.
 
 ## Why this problem
 
@@ -103,7 +105,7 @@ This project was developed with AI assistance (code drafting and
 documentation) under the author's direction. In line with the hub's
 Generative AI Guidelines, nothing AI-produced was accepted
 unverified: every component is covered by the unit-test suite
-(22/22 passing in MATLAB Online), the headline metrics come from the
+(25/25 passing in MATLAB Online), the headline metrics come from the
 project's own evaluation run on the full test set, and the STOI
 implementation was cross-validated against the reference algorithm —
 a process that caught and fixed a real bug (see
@@ -140,7 +142,7 @@ summary = evaluate_models()
 | `src/baselines/` | Spectral subtraction, decision-directed Wiener |
 | `src/dl/` | IRM target, network definition, model loader, inference |
 | `src/data/` | Pair listing, parquet extraction |
-| `tests/` | 22 unit tests (STFT, metrics, baselines, network, data, end-to-end) |
+| `tests/` | 25 unit tests (STFT, metrics, baselines, network, data, merge, end-to-end) |
 | `data/sample/` | 8 committed test pairs (CC BY 4.0, see `SOURCE.md`) |
 
 ## Requirements

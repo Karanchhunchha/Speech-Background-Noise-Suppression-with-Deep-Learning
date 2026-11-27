@@ -3,8 +3,10 @@ data/downloads/
 data/voicebank/
 data/training_patches.mat
 
-# Generated demo outputs
-results/
+# Generated outputs stay local, except the committed demo set
+results/*
+!results/demo/
+!results/demo/**
 
 # Only the shipped trained model is committed; backups stay local
 models/*

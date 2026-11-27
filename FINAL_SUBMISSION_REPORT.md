@@ -57,11 +57,21 @@ defaults now match this configuration exactly.
 
 ## Test suite
 
-`run_all_tests()` in MATLAB Online (R2026b): **22 passed, 0 failed,
+`run_all_tests()` in MATLAB Online (R2026b): **25 passed, 0 failed,
 0 incomplete.** The suite covers the STFT/ISTFT round trip, all three
 metrics, both baselines, the IRM target, the network definition,
-inference on a real sample pair, the committed data, and an
-end-to-end chain.
+inference on a real sample pair (including the short-file padding
+branch), the chunk-merge and its overlap guard, the committed data,
+and an end-to-end chain.
+
+Final-state re-verification (after an independent code and security
+review pass): the suite above ran on the final code; a fresh
+`download_data()` re-fetched the corpus with both SHA-256 checks
+passing (824 test + 800 training pairs extracted); and a 10-file
+spot evaluation on the final code reproduced the committed per-file
+values to the fourth decimal. CNN inference measured 0.173 s for a
+1.74 s clip on a MATLAB Online CPU — a real-time factor of ≈ 0.10,
+about 10× faster than real time.
 
 ## A verification catch worth reporting
 
@@ -79,7 +89,7 @@ documented in the `stoiScore` header.
 ## Reproduction
 
 ```matlab
-ok = run_all_tests()          % 22/22 on sample data, no downloads
+ok = run_all_tests()          % 25/25 on sample data, no downloads
 demo_denoise()                % listening demo on committed samples
 download_data()               % full corpus (test 824 + train 800 pairs)
 train_model()                 % shipped configuration, ~55 min CPU
