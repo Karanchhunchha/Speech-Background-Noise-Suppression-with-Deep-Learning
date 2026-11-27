@@ -1,4 +1,4 @@
-function enhanced = denoiseWithNet(noisy, fs, model)
+function enhanced = denoiseWithNet(noisy, fs, model, varargin)
 %DENOISEWITHNET Enhance a noisy signal with the trained CNN mask model.
 %   enhanced = DENOISEWITHNET(noisy, fs, model) applies the network in
 %   MODEL (see LOADDENOISEMODEL) to the noisy signal: the magnitude
@@ -7,10 +7,25 @@ function enhanced = denoiseWithNet(noisy, fs, model)
 %   overlaps and clipped to [0, 1], and the signal is resynthesised
 %   with the noisy phase.
 %
+%   Name-value options (defaults reproduce the original behaviour
+%   exactly; they exist for the Phase-1 ablation in reports/ablation.md):
+%     'MaskFloor'    - lower bound applied to the averaged mask before
+%                      use (default 0). A floor limits over-suppression
+%                      of low-energy speech, a known STOI lever.
+%     'MaskExponent' - exponent applied to the mask (default 1).
+%                      Values below 1 soften the suppression.
+%
 %   Models in this project are trained on 16 kHz audio (the training
 %   pipeline enforces that rate), so fs must be 16000: applying the
 %   mask statistics learned at one rate to audio sampled at another
 %   would silently produce wrong results, and is rejected instead.
+
+    p = inputParser;
+    p.addParameter('MaskFloor', 0, @(x) isscalar(x) && x >= 0 && x < 1);
+    p.addParameter('MaskExponent', 1, @(x) isscalar(x) && x > 0);
+    p.parse(varargin{:});
+    maskFloor = p.Results.MaskFloor;
+    maskExponent = p.Results.MaskExponent;
 
     if ~(isscalar(fs) && fs > 0)
         error('denoiseWithNet:BadFs', 'fs must be a positive scalar.');
@@ -54,5 +69,11 @@ function enhanced = denoiseWithNet(noisy, fs, model)
     end
     mask = maskSum ./ max(maskCount, 1);
     mask = min(max(mask, 0), 1);
+    if maskExponent ~= 1
+        mask = mask .^ maskExponent;
+    end
+    if maskFloor > 0
+        mask = max(mask, maskFloor);
+    end
     enhanced = istft((mask .* mag) .* exp(1i * phase), winLen, hop, numel(noisy));
 end
