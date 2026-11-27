@@ -11,9 +11,11 @@ classdef test_Network < matlab.unittest.TestCase
 
     methods (Test)
         function testIrmCleanOnlyIsOne(testCase)
-            mag = rand(257, 40);
+            % Magnitudes are kept away from zero: with an eps floor in
+            % the IRM denominator, near-zero bins cannot reach exactly 1.
+            mag = rand(257, 40) + 0.5;
             mask = computeIRM(mag, zeros(257, 40));
-            testCase.verifyEqual(mask, ones(257, 40), 'AbsTol', 1e-12);
+            testCase.verifyEqual(mask, ones(257, 40), 'AbsTol', 1e-9);
         end
 
         function testIrmNoiseOnlyIsZero(testCase)
@@ -35,16 +37,22 @@ classdef test_Network < matlab.unittest.TestCase
             testCase.verifyClass(layers(end), 'nnet.cnn.layer.RegressionOutputLayer');
         end
 
-        function testDenoiseWithAssembledNet(testCase)
-            % An untrained (assembled) network must still run end to end:
-            % correct output length and finite values. This exercises the
-            % full inference path without a training run.
+        function testDenoiseWithTinyTrainedNet(testCase)
+            % A network trained for one epoch on random patches must run
+            % end to end through DENOISEWITHNET: correct output length
+            % and finite values. (assembleNetwork cannot be used here —
+            % it refuses layers whose parameters are not yet trained.)
             rootDir = fileparts(fileparts(mfilename('fullpath')));
             pairs = listPairs(fullfile(rootDir, 'data', 'sample', 'clean'), ...
                               fullfile(rootDir, 'data', 'sample', 'noisy'));
             [noisy, fs] = audioread(pairs(1).noisyFile);
-            layers = buildDenoiseNet(257, 64);
-            model = struct('net', assembleNetwork(layers), 'mu', 0, 'sigma', 1, ...
+            rng(5);
+            X = randn(257, 64, 1, 16, 'single');
+            Y = rand(257, 64, 1, 16, 'single');
+            opts = trainingOptions('adam', 'MaxEpochs', 1, 'MiniBatchSize', 8, ...
+                'Verbose', false, 'Plots', 'none', 'ExecutionEnvironment', 'cpu');
+            net = trainNetwork(X, Y, buildDenoiseNet(257, 64), opts);
+            model = struct('net', net, 'mu', 0, 'sigma', 1, ...
                 'winLen', 512, 'hop', 256, 'segLen', 64);
             out = denoiseWithNet(noisy, fs, model);
             testCase.verifyEqual(numel(out), numel(noisy));

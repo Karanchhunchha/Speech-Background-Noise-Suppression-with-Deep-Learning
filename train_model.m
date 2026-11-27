@@ -11,20 +11,37 @@ function model = train_model(varargin)
 %     'Epochs'   training epochs (default 12)
 %     'Quick'    true for a short smoke run: 60 utterances, 4 crops,
 %                3 epochs (default false)
+%     'NumUtterances' / 'CropsPerUtterance'
+%                patch configuration for a full run (defaults 300 / 6)
 
     p = inputParser;
     addParameter(p, 'Epochs', 12);
     addParameter(p, 'Quick', false);
+    addParameter(p, 'NumUtterances', 300);
+    addParameter(p, 'CropsPerUtterance', 6);
     parse(p, varargin{:});
 
     rootDir = setup();
     patchFile = fullfile(rootDir, 'data', 'training_patches.mat');
-    if p.Results.Quick || ~exist(patchFile, 'file')
-        if p.Results.Quick
-            prepare_training_data('NumUtterances', 60, 'CropsPerUtterance', 4);
-        else
-            prepare_training_data();
-        end
+    % Reuse the patch file only when it was built with the configuration
+    % this run needs — a leftover quick-mode patch file must never
+    % silently shrink a full training run (or the reverse).
+    if p.Results.Quick
+        wantUtt = 60;
+        wantCrops = 4;
+    else
+        wantUtt = p.Results.NumUtterances;
+        wantCrops = p.Results.CropsPerUtterance;
+    end
+    reuse = false;
+    if exist(patchFile, 'file')
+        saved = load(patchFile, 'patchConfig');
+        reuse = isfield(saved, 'patchConfig') && ...
+            saved.patchConfig.NumUtterances == wantUtt && ...
+            saved.patchConfig.CropsPerUtterance == wantCrops;
+    end
+    if ~reuse
+        prepare_training_data('NumUtterances', wantUtt, 'CropsPerUtterance', wantCrops);
     end
     data = load(patchFile, 'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen');
 

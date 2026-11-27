@@ -10,9 +10,11 @@ classdef test_Metrics < matlab.unittest.TestCase
     end
 
     methods (Test)
-        function testSnrPerfectIsInf(testCase)
+        function testSnrPerfectIsHuge(testCase)
+            % Error power is floored at eps, so a perfect estimate
+            % returns a very large finite SNR (not Inf).
             x = randn(8000, 1);
-            testCase.verifyTrue(isinf(snrDb(x, x)));
+            testCase.verifyGreaterThan(snrDb(x, x), 100);
         end
 
         function testSegSnrPerfectIsClipMax(testCase)

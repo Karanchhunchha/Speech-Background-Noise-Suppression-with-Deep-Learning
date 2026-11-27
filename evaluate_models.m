@@ -11,10 +11,13 @@ function summary = evaluate_models(varargin)
 %   reports/EVALUATION.md, and the summary table is returned.
 %
 %   Name-value options:
-%     'MaxFiles'  evaluate at most this many pairs (default: all)
+%     'MaxFiles'    evaluate at most this many pairs (default: all)
+%     'StartIndex'  start at this pair index (default 1); together with
+%                   'MaxFiles' this allows chunked evaluation
 
     p = inputParser;
     addParameter(p, 'MaxFiles', Inf);
+    addParameter(p, 'StartIndex', 1);
     parse(p, varargin{:});
 
     rootDir = setup();
@@ -30,7 +33,9 @@ function summary = evaluate_models(varargin)
     if isempty(pairs)
         error('evaluate_models:NoData', 'No test pairs found.');
     end
-    pairs = pairs(1:min(numel(pairs), p.Results.MaxFiles));
+    firstIdx = min(p.Results.StartIndex, numel(pairs));
+    lastIdx = min(numel(pairs), firstIdx + p.Results.MaxFiles - 1);
+    pairs = pairs(firstIdx:lastIdx);
     fprintf('Evaluating %d pairs from %s\n', numel(pairs), dataNote);
 
     modelFile = fullfile(rootDir, 'models', 'denoiseNet.mat');
@@ -101,8 +106,10 @@ function summary = evaluate_models(varargin)
         fprintf(fid, '| %s | %.2f | %.2f | %.3f |\n', methodNames{m}, ...
             summary.SegSNR_dB(m), summary.LSD_dB(m), summary.STOI(m));
     end
-    fprintf(fid, '\nSegmental-SNR improvement of the CNN over the noisy input: %.2f dB.\n', ...
-        summary.SegSNR_dB(end) - summary.SegSNR_dB(1));
+    if haveModel
+        fprintf(fid, '\nSegmental-SNR improvement of the CNN over the noisy input: %.2f dB.\n', ...
+            summary.SegSNR_dB(4) - summary.SegSNR_dB(1));
+    end
     fclose(fid);
 
     disp(summary);

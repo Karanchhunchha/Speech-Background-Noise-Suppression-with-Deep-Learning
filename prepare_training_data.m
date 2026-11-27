@@ -85,8 +85,10 @@ function stats = prepare_training_data(varargin)
     XTrain = (XTrain - single(mu)) ./ single(sigma);
 
     stats = struct('NumPatches', out, 'NumUtterances', numUtt, 'Mu', mu, 'Sigma', sigma);
+    patchConfig = struct('NumUtterances', numUtt, 'CropsPerUtterance', cropsPerUtt, ...
+        'SegLen', segLen);
     save(fullfile(rootDir, 'data', 'training_patches.mat'), ...
-        'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen', '-v7.3');
+        'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen', 'patchConfig', '-v7.3');
     fprintf('Prepared %d patches from %d utterances (mu=%.4f, sigma=%.4f).\n', ...
         out, numUtt, mu, sigma);
 end
