@@ -1,17 +1,26 @@
 function results = pesq_native(varargin)
-%PESQ_NATIVE PESQ scores from MATLAB's own pesq (Audio Toolbox).
-%   results = PESQ_NATIVE() scores the noisy input and every
-%   enhancer on the VoiceBank-DEMAND test pairs with the Audio
-%   Toolbox `pesq` function (ITU-T P.862; wideband at 16 kHz) and
-%   writes a long-format CSV with one row per file and method.
+%PESQ_NATIVE PESQ scores from a MATLAB `pesq` function, if one exists.
+%   results = PESQ_NATIVE() would score the noisy input and every
+%   enhancer on the VoiceBank-DEMAND test pairs with a `pesq`
+%   function (ITU-T P.862) and write a long-format CSV with one row
+%   per file and method.
 %
-%   This is an OPTIONAL verification tool. The core pipeline needs
-%   only MATLAB + Deep Learning Toolbox (see
-%   reports/required_products.txt) and never calls this function;
-%   PESQ needs a licensed reference implementation, which the Audio
-%   Toolbox provides. If `pesq` is not available the function says
-%   so and returns without writing anything - scores are never
-%   approximated or invented.
+%   VERIFIED FINDING (28 Nov 2026, MATLAB Online R2026b, Audio
+%   Toolbox licensed and resolving - audioDatastore works): MATLAB
+%   ships NO `pesq` function at all. `which('pesq','-all')` reports
+%   "not found" and `exist('pesq')` is 0. PESQ's reference
+%   implementation is not part of MATLAB or the Audio Toolbox, so
+%   in-MATLAB PESQ is not possible; this project's PESQ numbers
+%   come from the offline route (tools/python_metrics.py, see
+%   reports/pesq_subset.md). This function is kept as the record of
+%   that check: it detects the absence, says so, and returns
+%   without writing anything - scores are never approximated or
+%   invented. If a future MATLAB release ships `pesq`, this tool
+%   will start working unchanged.
+%
+%   The core pipeline needs only MATLAB + Deep Learning Toolbox
+%   (see reports/required_products.txt) and never calls this
+%   function.
 %
 %   Name-value options:
 %     'MaxFiles'    evaluate at most this many pairs (default: all)
@@ -32,10 +41,11 @@ function results = pesq_native(varargin)
 
     results = table();
     if isempty(which('pesq'))
-        fprintf(['pesq_native: the Audio Toolbox pesq function is not ' ...
-            'available in this MATLAB environment.\nNo file written, ' ...
-            'no scores produced. (The offline route is ' ...
-            'tools/python_metrics.py.)\n']);
+        fprintf(['pesq_native: no pesq function exists in this MATLAB ' ...
+            'installation (verified: which/exist find nothing, even ' ...
+            'with the Audio Toolbox licensed - MATLAB ships no PESQ ' ...
+            'implementation).\nNo file written, no scores produced. ' ...
+            '(The offline route is tools/python_metrics.py.)\n']);
         return;
     end
 
