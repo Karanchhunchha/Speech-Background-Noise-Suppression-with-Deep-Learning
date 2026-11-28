@@ -129,3 +129,50 @@ weaker model. The operating point was selected on validation
 before this test run, per protocol; it was **not** re-tuned after
 seeing these numbers, and this paragraph is the disclosure of
 what the trade bought and what it cost.
+
+## v3 complex-mask attempt (2026-11-28) — failed validation, root cause found
+
+A second-generation model was attempted in the advanced upgrade
+round: a residual dilated CNN (179,354 parameters) predicting a
+**complex ratio mask** (2·tanh-bounded, real + imaginary channels)
+trained with a custom `dlnetwork` loop on fresh random crops
+(`train_model_v3.m`, `src/dl/`). Rationale: the shipped IRM model
+reuses the noisy phase, which caps STOI/PESQ; a complex mask can
+correct phase. Training ran 6 epochs over 2,584 utterances
+(speakers p236/p254 excluded, as always); the training loss fell
+smoothly from 2.80 to 0.15.
+
+**Validation verdict (200 held-out files, p236+p254,
+`tools/validate_model.m`): the candidate lost decisively and was
+NOT shipped.** The shipped R1 model remains the model of record.
+
+| Model | SegSNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |
+|---|---|---|---|---|
+| Noisy (reference) | 1.27 | 20.27 | 0.807 | 6.58 |
+| denoiseNet (irm, shipped R1) | 3.73 | 16.12 | 0.809 | 9.23 |
+| denoiseNetV3 (crm) | −9.23 | 26.59 | 0.803 | −5.33 |
+
+**Diagnosis (same day, four checks).** (1) The clone's training
+corpus holds 3,115 pairs, not the full 11,572 — a partial
+download, noted for any retrain. (2) On a single validation file
+the predicted mask was saturated at its ±2 bound on ~100% of
+bins. (3) `predict` and `forward` on the identical patch differed
+by up to 112 in absolute output (mean |output| 7.73 vs 0.118) —
+the signature of stale batch-norm state. (4) An in-sample
+*training* file also scored −9.16 dB, ruling out a
+generalisation failure.
+
+**Root cause — a bug in our training loop, not in the model
+design.** `modelLossCRM` called `forward(net, X)` and discarded
+the updated network state; `train_model_v3` therefore never
+carried the batch-norm trailing averages forward, and the saved
+network kept their initial values (mean 0, variance 1). During
+training, `forward` normalises with per-batch statistics, so the
+loss looked healthy; at inference, `predict` uses the stored
+trailing averages, the activations exploded, and the mask
+saturated. The fix is committed in `modelLossCRM.m` /
+`train_model_v3.m` (state is now returned and assigned), and
+`tools/recalibrate_bn_v3.m` can recompute the trailing averages
+for the already-trained weights without retraining. The
+recalibrated candidate will face the same validation gate; this
+section will be updated with its verdict, whichever way it goes.

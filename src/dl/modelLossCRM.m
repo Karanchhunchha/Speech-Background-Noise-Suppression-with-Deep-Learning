@@ -1,6 +1,6 @@
-function [loss, gradients] = modelLossCRM(net, X, T)
+function [loss, gradients, state] = modelLossCRM(net, X, T)
 %MODELLOSSCRM Masked-spectrum loss for the complex-mask network.
-%   [loss, gradients] = MODELLOSSCRM(net, X, T) runs the dlnetwork
+%   [loss, gradients, state] = MODELLOSSCRM(net, X, T) runs the dlnetwork
 %   NET on a minibatch X (numFreqBins x segLen x 3 x N, dlarray
 %   'SSCB': noisy real / specScale, noisy imaginary / specScale,
 %   standardised log-magnitude), applies the predicted complex mask
@@ -18,8 +18,16 @@ function [loss, gradients] = modelLossCRM(net, X, T)
 %   are precomputed spectra — no differentiable STFT is needed
 %   inside the loss. Used with DLFEVAL in TRAIN_MODEL_V3's custom
 %   training loop.
+%
+%   The third output, STATE, is the network state updated by the
+%   forward pass (the batch-norm trailing averages). The training
+%   loop MUST assign it back (net.State = state): the first v3 run
+%   (28 Nov 2026) dropped it, so the saved network kept the initial
+%   trailing averages and PREDICT exploded at inference while
+%   training-time FORWARD (batch statistics) looked healthy. See
+%   reports/ablation.md and tools/recalibrate_bn_v3.m.
 
-    Y = forward(net, X);
+    [Y, state] = forward(net, X);
     mask = 2 * tanh(Y);
     mRe = mask(:, :, 1, :);
     mIm = mask(:, :, 2, :);

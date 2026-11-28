@@ -127,9 +127,14 @@ function model = train_model_v3(varargin)
             T(:, :, 1, fill) = single(real(Sc(:, cols)) / specScale);
             T(:, :, 2, fill) = single(imag(Sc(:, cols)) / specScale);
             if fill == cfg.MiniBatchSize || k == numel(order)
-                [loss, gradients] = dlfeval(@modelLossCRM, net, ...
+                [loss, gradients, state] = dlfeval(@modelLossCRM, net, ...
                     dlarray(X(:, :, :, 1:fill), 'SSCB'), ...
                     dlarray(T(:, :, :, 1:fill), 'SSCB'));
+                % Carry the batch-norm state forward. Without this the
+                % saved network keeps the INITIAL trailing averages and
+                % predict() explodes at inference (the bug that sank
+                % the first v3 run, 28 Nov 2026 — see reports/ablation.md).
+                net.State = state;
                 gradNorm = sqrt(sum(cellfun( ...
                     @(v) sum(double(extractdata(v)) .^ 2, 'all'), gradients.Value)));
                 if gradNorm > 5
