@@ -162,3 +162,28 @@ the before/after measured on the full 824-file test set:
 - Two limitation bullets above are superseded by this addendum:
   the model is now trained on 1,600 utterances, and the STOI gap
   is 0.001, not 0.009. The `trainNetwork` note stands.
+
+---
+
+## Upgrade-round addendum (28 Nov 2026, evening)
+
+- **Log-MMSE baseline evaluated on the full test set.** The
+  824-file evaluation was re-run in four chunks (outputs renamed
+  between chunks — an earlier merge had silently used stale
+  4-method chunk files) and re-merged with all five methods:
+  Log-MMSE scores 2.82 dB SegSNR / 12.72 LSD / 0.920 STOI /
+  9.52 SI-SDR, between Wiener and spectral subtraction, exactly
+  where the canonical classical estimator belongs. Every
+  pre-existing row reproduces its shipped value exactly; the
+  shipped CNN (R1) is unchanged at 5.63 / 11.90 / 0.920 / 14.20.
+- **Build proof:** `buildtool` (check + test + verify) passes
+  end-to-end: code check 0 errors on 52 files, 30/30 tests,
+  `verify_submission` ALL CHECKS PASSED, including reproducing
+  the committed metrics on 8 files (worst deviation 0.00).
+- **v3 verdict stands** (see `reports/ablation.md`): the
+  recalibrated complex-mask candidate beats R1 on SegSNR/LSD/
+  SI-SDR on held-out speakers but its STOI (0.803) falls below
+  both R1 (0.809) and the noisy input (0.807); R1 remains the
+  shipped model. The identified route to a shippable v3 is a
+  clean retrain with the fixed loop on the full corpus, not
+  further patching of this candidate.

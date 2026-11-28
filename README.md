@@ -26,6 +26,7 @@ generated from `reports/metrics_summary.csv` by
 | Noisy | 1.52 | 14.50 | 0.921 | 8.45 |
 | SpectralSubtraction | 2.08 | 13.60 | 0.922 | 8.87 |
 | Wiener | 2.99 | 12.71 | 0.919 | 9.62 |
+| LogMMSE | 2.82 | 12.72 | 0.920 | 9.52 |
 | CNN | 5.63 | 11.90 | 0.920 | 14.20 |
 <!-- RESULTS:END -->
 

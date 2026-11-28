@@ -173,6 +173,26 @@ trailing averages, the activations exploded, and the mask
 saturated. The fix is committed in `modelLossCRM.m` /
 `train_model_v3.m` (state is now returned and assigned), and
 `tools/recalibrate_bn_v3.m` can recompute the trailing averages
-for the already-trained weights without retraining. The
-recalibrated candidate will face the same validation gate; this
-section will be updated with its verdict, whichever way it goes.
+for the already-trained weights without retraining.
+
+**Recalibration verdict (2026-11-28).** `tools/recalibrate_bn_v3.m`
+replayed the training batches (162 state updates) and the same
+200-file gate then read:
+
+| Model | SegSNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |
+|---|---|---|---|---|
+| denoiseNetV3_recal (crm) | 4.00 | 15.96 | 0.803 | 9.31 |
+
+The candidate recovered from −9.23 dB to first place on SegSNR,
+LSD and SI-SDR, ahead of R1 by +0.27 dB, −0.16 dB and +0.08 dB
+respectively. **But its STOI (0.803) sits below both R1 (0.809)
+and the noisy reference (0.807)** — the exact weakness this
+project has repeatedly optimised against (it is why R1, not v2,
+ships). Reviewer decision: **NOT shipped.** The SNR margins are
+narrow, the intelligibility regression is on the metric the
+shipped model was chosen to protect, and one high-SNR validation
+file (p236_002, noisy SegSNR 14.30 dB) was degraded to 3.20 dB,
+worse than the pattern R1 shows. R1 remains the model of record.
+The identified path to a shippable v3 is a clean retrain with the
+fixed loop on the full 11,572-utterance corpus (the clone holds
+3,115 pairs), not further patching of this candidate.

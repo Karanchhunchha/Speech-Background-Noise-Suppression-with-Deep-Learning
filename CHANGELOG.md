@@ -34,6 +34,26 @@ follow the submission history; dates are IST.
   (validation SegSNR −9.23 dB despite a healthy training loss).
   State is now returned by `modelLossCRM` and assigned in
   `train_model_v3`. Full account in `reports/ablation.md`.
+- **`merge_evaluation` hardcoded a 4-method list** and silently
+  dropped Log-MMSE rows; it now merges all five methods.
+- **Chunked evaluation outputs overwrote each other**: every
+  `evaluate_models` chunk writes the same `metrics_per_file.csv`,
+  and the chunk files must be renamed to `metrics_partN.csv`
+  between chunks. A re-run without the renames had merged stale
+  4-method parts; the evaluation was re-run with renames and
+  re-merged (824 files, five methods).
+
+### Verified
+- **Full 5-method test evaluation (824 files)**: Log-MMSE
+  2.82 dB SegSNR / 12.72 LSD / 0.920 STOI / 9.52 SI-SDR, between
+  Wiener and spectral subtraction; every pre-existing row
+  reproduces its shipped value exactly. CNN unchanged:
+  5.63 / 11.90 / 0.920 / 14.20.
+- **`buildtool` full pass** (2026-11-28): code check 0 errors on
+  52 files, 30/30 tests, `verify_submission` ALL CHECKS PASSED.
+  README results table regenerated from the 5-method summary;
+  spectrogram comparison figure added
+  (`reports/spectrogram_before_after.png`).
 
 ## [1.0.0] — 2026-11-28
 

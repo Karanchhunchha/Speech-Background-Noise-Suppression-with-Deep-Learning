@@ -56,7 +56,7 @@ function ok = verify_submission()
         cleanup = onCleanup(@() restoreReports(rootDir, before));
         evaluate_models('MaxFiles', 8);
         fresh = readtable(perFileCsv);
-        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'CNN'};
+        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'LogMMSE', 'CNN'};
         worst = 0;
         for m = 1:numel(methodNames)
             for metric = {'SegSNR_', 'LSD_', 'STOI_', 'SISDR_'}
