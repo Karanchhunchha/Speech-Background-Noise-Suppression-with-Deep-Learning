@@ -14,7 +14,7 @@ Usage:
 
 Input folder layout (as written by evaluate_models):
     <id>_clean.wav, <id>_noisy.wav, <id>_spectralsubtraction.wav,
-    <id>_wiener.wav, <id>_cnn.wav
+    <id>_wiener.wav, <id>_logmmse.wav, <id>_cnn.wav
 Output: reports/pesq_results.csv with per-file and mean PESQ-WB.
 If the `pesq` package is unavailable the script says so and exits
 without writing any numbers — scores are never approximated silently.
@@ -36,7 +36,7 @@ except ImportError as exc:
 
 def main(folder: str) -> None:
     folder = Path(folder)
-    methods = ["noisy", "spectralsubtraction", "wiener", "cnn"]
+    methods = ["noisy", "spectralsubtraction", "wiener", "logmmse", "cnn"]
     rows = []
     for clean_path in sorted(folder.glob("*_clean.wav")):
         clip_id = clean_path.name[: -len("_clean.wav")]

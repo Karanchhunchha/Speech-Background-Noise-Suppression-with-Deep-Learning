@@ -42,13 +42,14 @@ function results = demo_realtime(varargin)
     chunk = p.Results.ChunkSamples;
     numChunks = min(p.Results.MaxChunks, floor(numel(noisy) / chunk));
     budgetMs = 1000 * chunk / fs;
-    methodNames = {'SpectralSubtraction', 'Wiener', 'CNN'};
+    methodNames = {'SpectralSubtraction', 'Wiener', 'LogMMSE', 'CNN'};
     times = zeros(numChunks, numel(methodNames));
     for c = 1:numChunks
         seg = noisy((c - 1) * chunk + 1 : c * chunk);
         t = tic; spectralSubtraction(seg, fs); times(c, 1) = toc(t);
         t = tic; wienerEnhance(seg, fs);      times(c, 2) = toc(t);
-        t = tic; denoiseWithNet(seg, fs, model); times(c, 3) = toc(t);
+        t = tic; logMmseEnhance(seg, fs);      times(c, 3) = toc(t);
+        t = tic; denoiseWithNet(seg, fs, model); times(c, 4) = toc(t);
     end
     rows = {};
     for m = 1:numel(methodNames)

@@ -18,4 +18,13 @@ function model = loadDenoiseModel(modelFile)
                 'Model in %s is missing the field "%s".', modelFile, required{k});
         end
     end
+    if ~isfield(model, 'kind')
+        % Artifacts written before the complex-mask model existed are
+        % magnitude-mask (IRM) models.
+        model.kind = 'irm';
+    end
+    if strcmp(model.kind, 'crm') && ~isfield(model, 'specScale')
+        error('loadDenoiseModel:BadArtifact', ...
+            'Complex-mask model in %s is missing the field "specScale".', modelFile);
+    end
 end

@@ -49,11 +49,21 @@ classdef test_Baselines < matlab.unittest.TestCase
             testCase.verifyGreaterThan(segSnrDb(clean, out), segSnrDb(clean, noisy));
         end
 
+        function testLogMmseImproves(testCase)
+            [clean, noisy] = test_Baselines.makeMixture();
+            out = logMmseEnhance(noisy, 16000);
+            testCase.verifyEqual(numel(out), numel(noisy));
+            testCase.verifyTrue(all(isfinite(out)));
+            testCase.verifyGreaterThan(segSnrDb(clean, out), segSnrDb(clean, noisy));
+        end
+
         function testBaselinesRejectBadFs(testCase)
             testCase.verifyError(@() spectralSubtraction(randn(100, 1), -1), ...
                 'spectralSubtraction:BadFs');
             testCase.verifyError(@() wienerEnhance(randn(100, 1), 0), ...
                 'wienerEnhance:BadFs');
+            testCase.verifyError(@() logMmseEnhance(randn(100, 1), -1), ...
+                'logMmseEnhance:BadFs');
         end
     end
 end

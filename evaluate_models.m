@@ -1,8 +1,9 @@
 function summary = evaluate_models(varargin)
 %EVALUATE_MODELS Objective evaluation of all enhancers on the test set.
 %   summary = EVALUATE_MODELS() evaluates the noisy reference, spectral
-%   subtraction, the decision-directed Wiener filter and (when a
-%   trained model exists in models/denoiseNet.mat) the CNN mask model
+%   subtraction, the decision-directed Wiener filter, the log-MMSE
+%   estimator and (when a trained model exists in
+%   models/denoiseNet.mat) the CNN mask model
 %   on the VoiceBank-DEMAND test pairs in data/voicebank (falling back
 %   to the committed sample in data/sample when the full test set has
 %   not been downloaded). Metrics per file: segmental SNR (dB),
@@ -61,9 +62,9 @@ function summary = evaluate_models(varargin)
     haveModel = exist(modelFile, 'file') == 2;
     if haveModel
         model = loadDenoiseModel(modelFile);
-        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'CNN'};
+        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'LogMMSE', 'CNN'};
     else
-        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener'};
+        methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'LogMMSE'};
         fprintf('No trained model found; skipping the CNN method.\n');
     end
     numMethods = numel(methodNames);
@@ -97,8 +98,9 @@ function summary = evaluate_models(varargin)
         enhanced{1} = noisy;
         enhanced{2} = spectralSubtraction(noisy, fs);
         enhanced{3} = wienerEnhance(noisy, fs);
+        enhanced{4} = logMmseEnhance(noisy, fs);
         if haveModel
-            enhanced{4} = denoiseWithNet(noisy, fs, model);
+            enhanced{5} = denoiseWithNet(noisy, fs, model);
         end
         for m = 1:numMethods
             seg(i, m) = segSnrDb(clean, enhanced{m});
@@ -176,8 +178,9 @@ function summary = evaluate_models(varargin)
     fprintf(fid, '\nPer-SNR breakdown: `metrics_by_snr.csv`. ');
     fprintf(fid, 'Per-noise-type breakdown is not reported: the distributed corpus files carry no per-file noise-type label, and none is inferred.\n');
     if haveModel
+        cnnIdx = find(strcmp(methodNames, 'CNN'), 1);
         fprintf(fid, '\nSegmental-SNR improvement of the CNN over the noisy input: %.2f dB.\n', ...
-            summary.SegSNR_dB(4) - summary.SegSNR_dB(1));
+            summary.SegSNR_dB(cnnIdx) - summary.SegSNR_dB(1));
     end
     clear fidCleanup;
 

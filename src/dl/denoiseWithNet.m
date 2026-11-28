@@ -40,6 +40,13 @@ function enhanced = denoiseWithNet(noisy, fs, model, varargin)
         error('denoiseWithNet:BadFs', ...
             'This model was trained at 16 kHz; got fs = %g Hz.', fs);
     end
+    if isfield(model, 'kind') && strcmp(model.kind, 'crm')
+        % Complex-mask models correct the phase as well as the
+        % magnitude; the MaskFloor/MaskExponent operating point does
+        % not apply to them (see BUILDENOISENETV3 / TRAIN_MODEL_V3).
+        enhanced = denoiseCRM(noisy, model);
+        return;
+    end
     winLen = model.winLen;
     hop = model.hop;
     segLen = model.segLen;
@@ -82,4 +89,59 @@ function enhanced = denoiseWithNet(noisy, fs, model, varargin)
         mask = max(mask, maskFloor);
     end
     enhanced = istft((mask .* mag) .* exp(1i * phase), winLen, hop, numel(noisy));
+end
+
+function enhanced = denoiseCRM(noisy, model)
+%DENOISECRM Apply a complex-ratio-mask model (kind 'crm').
+%   The network consumes overlapping segments of three channels
+%   (noisy real / specScale, noisy imaginary / specScale,
+%   standardised log-magnitude) and emits a raw two-channel mask;
+%   the bounded complex mask maskBound * tanh(output) is averaged
+%   over the segment overlaps and applied to the full noisy complex
+%   spectrogram, correcting magnitude and phase together.
+
+    winLen = model.winLen;
+    hop = model.hop;
+    segLen = model.segLen;
+    S = stft(noisy, winLen, hop);
+    mag = abs(S);
+    numFrames = size(S, 2);
+    if numFrames < segLen
+        S = [S, zeros(size(S, 1), segLen - numFrames)];
+        mag = abs(S);
+        numFrames = segLen;
+    end
+    logMag = log1p(mag);
+    maskBound = 2;
+    if isfield(model, 'maskBound')
+        maskBound = model.maskBound;
+    end
+    mReSum = zeros(size(S));
+    mImSum = zeros(size(S));
+    maskCount = zeros(size(S));
+    segHop = segLen / 2;
+    starts = 1:segHop:(numFrames - segLen + 1);
+    if isempty(starts)
+        starts = 1;
+    end
+    if starts(end) ~= numFrames - segLen + 1
+        starts = [starts, numFrames - segLen + 1];
+    end
+    for s = starts
+        cols = s:(s + segLen - 1);
+        patch = zeros(size(S, 1), segLen, 3, 'single');
+        patch(:, :, 1) = single(real(S(:, cols)) / model.specScale);
+        patch(:, :, 2) = single(imag(S(:, cols)) / model.specScale);
+        patch(:, :, 3) = single((logMag(:, cols) - model.mu) / model.sigma);
+        pred = predict(model.net, reshape(patch, [size(patch, 1), size(patch, 2), 3, 1]));
+        pred = double(reshape(pred, [size(S, 1), segLen, 2]));
+        mask = maskBound * tanh(pred);
+        mReSum(:, cols) = mReSum(:, cols) + mask(:, :, 1);
+        mImSum(:, cols) = mImSum(:, cols) + mask(:, :, 2);
+        maskCount(:, cols) = maskCount(:, cols) + 1;
+    end
+    mRe = mReSum ./ max(maskCount, 1);
+    mIm = mImSum ./ max(maskCount, 1);
+    estSpec = (mRe + 1i * mIm) .* S;
+    enhanced = istft(estSpec, winLen, hop, numel(noisy));
 end
