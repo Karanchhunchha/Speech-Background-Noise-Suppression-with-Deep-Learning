@@ -40,7 +40,8 @@ classdef test_Network < matlab.unittest.TestCase
         function testV3GraphBuildsAndPredicts(testCase)
             net = dlnetwork(buildDenoiseNetV3(257, 64));
             out = predict(net, randn(257, 64, 3, 1, 'single'));
-            testCase.verifyEqual(size(out), [257, 64, 2, 1]);
+            % size() drops the trailing singleton batch dimension.
+            testCase.verifyEqual(size(out), [257, 64, 2]);
             testCase.verifyTrue(all(isfinite(out), 'all'));
         end
 
