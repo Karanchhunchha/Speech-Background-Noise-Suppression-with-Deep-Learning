@@ -71,7 +71,23 @@ function summary = merge_evaluation(reportDir)
     summary.LSD_dB = lsdMean;
     summary.STOI = stoiMean;
     summary.STOI_Std = stoiStd;
+    hasSisdr = all(cellfun(@(n) any(strcmp(allRows.Properties.VariableNames, ...
+        ['SISDR_' n])), methodNames));
+    if hasSisdr
+        sisdrMean = zeros(numMethods, 1);
+        sisdrStd = zeros(numMethods, 1);
+        for m = 1:numMethods
+            col = allRows.(['SISDR_' methodNames{m}]);
+            sisdrMean(m) = mean(col, 'omitnan');
+            sisdrStd(m) = std(col, 'omitnan');
+        end
+        summary.SISDR_dB = sisdrMean;
+        summary.SISDR_Std = sisdrStd;
+    end
     writetable(summary, fullfile(reportDir, 'metrics_summary.csv'));
+    if any(strcmp(allRows.Properties.VariableNames, 'InputSNR_dB'))
+        writeBySnrTable(reportDir, allRows, methodNames);
+    end
 
     fid = fopen(fullfile(reportDir, 'EVALUATION.md'), 'w');
     fidCleanup = onCleanup(@() fclose(fid));
@@ -83,11 +99,22 @@ function summary = merge_evaluation(reportDir)
     end
     fprintf(fid, 'Files evaluated: %d (combined from %d chunked runs). ', height(allRows), numel(names));
     fprintf(fid, 'Metrics are means over files (segmental SNR and STOI: higher is better; LSD: lower is better).\n\n');
-    fprintf(fid, '| Method | Segmental SNR (dB) | LSD (dB) | STOI |\n');
-    fprintf(fid, '|---|---|---|---|\n');
-    for m = 1:numMethods
-        fprintf(fid, '| %s | %.2f | %.2f | %.3f |\n', methodNames{m}, ...
-            segMean(m), lsdMean(m), stoiMean(m));
+    if hasSisdr
+        fprintf(fid, '| Method | Segmental SNR (dB) | LSD (dB) | STOI | SI-SDR (dB) |\n');
+        fprintf(fid, '|---|---|---|---|---|\n');
+        for m = 1:numMethods
+            fprintf(fid, '| %s | %.2f | %.2f | %.3f | %.2f |\n', methodNames{m}, ...
+                segMean(m), lsdMean(m), stoiMean(m), sisdrMean(m));
+        end
+        fprintf(fid, '\nPer-SNR breakdown: `metrics_by_snr.csv`. ');
+        fprintf(fid, 'Per-noise-type breakdown is not reported: the distributed corpus files carry no per-file noise-type label, and none is inferred.\n');
+    else
+        fprintf(fid, '| Method | Segmental SNR (dB) | LSD (dB) | STOI |\n');
+        fprintf(fid, '|---|---|---|---|\n');
+        for m = 1:numMethods
+            fprintf(fid, '| %s | %.2f | %.2f | %.3f |\n', methodNames{m}, ...
+                segMean(m), lsdMean(m), stoiMean(m));
+        end
     end
     cnnIdx = find(strcmp(methodNames, 'CNN'), 1);
     noisyIdx = find(strcmp(methodNames, 'Noisy'), 1);

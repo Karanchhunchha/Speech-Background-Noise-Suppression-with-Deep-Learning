@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Speech Background Noise Suppression with Deep Learning"
+abstract: >-
+  End-to-end MATLAB implementation of speech background-noise
+  suppression: classical baselines (Boll spectral subtraction,
+  Ephraim-Malah decision-directed Wiener filtering), a compact CNN
+  ideal-ratio-mask model trained on VoiceBank-DEMAND, and a fully
+  verified evaluation (segmental SNR, log-spectral distance, STOI
+  cross-checked against the reference implementation, and SI-SDR)
+  on the corpus's standard 824-file test set.
+authors:
+  - family-names: Chhunchha
+    given-names: Karan
+    email: karanchhunchha@gmail.com
+repository-code: "https://github.com/Karanchhunchha/Speech-Background-Noise-Suppression-with-Deep-Learning"
+license: MIT
+keywords:
+  - speech enhancement
+  - noise suppression
+  - deep learning
+  - MATLAB
+  - VoiceBank-DEMAND
+  - STOI

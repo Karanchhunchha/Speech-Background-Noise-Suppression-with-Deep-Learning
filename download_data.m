@@ -1,4 +1,4 @@
-function download_data()
+function download_data(varargin)
 %DOWNLOAD_DATA Fetch the VoiceBank-DEMAND (16 kHz) data this project uses.
 %   DOWNLOAD_DATA() downloads the standard test set (824 clean/noisy
 %   pairs, two unseen speakers) and the first 800 training pairs of the
@@ -7,6 +7,15 @@ function download_data()
 %
 %       data/voicebank/clean_test,  data/voicebank/noisy_test
 %       data/voicebank/clean_train, data/voicebank/noisy_train
+%
+%   DOWNLOAD_DATA('ExtraTrainShards', 1) additionally downloads and
+%   extracts training shard 1 (of shards 1-4; shard 0 is the default
+%   one above). Extra shards add the corpus's remaining training
+%   speakers — used by the Phase-1 hardening work for a genuinely
+%   speaker-disjoint validation set and larger training runs. Every
+%   extra shard is SHA-256 verified exactly like the default ones.
+%   'MaxExtraPairs' caps how many pairs per extra shard are extracted
+%   (default inf — the whole shard).
 %
 %   Dataset: C. Valentini-Botinhao, "Noisy speech database for training
 %   speech enhancement algorithms and TTS models", Edinburgh DataShare,
@@ -25,6 +34,14 @@ function download_data()
 %   the unit tests. Run this function once before TRAIN_MODEL /
 %   EVALUATE_MODELS for the full pipeline.
 
+    p = inputParser;
+    p.addParameter('ExtraTrainShards', [], @(x) isempty(x) || ...
+        (isnumeric(x) && all(ismember(x, 1:4))));
+    p.addParameter('MaxExtraPairs', inf, @(x) isscalar(x) && x > 0);
+    p.parse(varargin{:});
+    extraShards = p.Results.ExtraTrainShards;
+    maxExtraPairs = p.Results.MaxExtraPairs;
+
     rootDir = setup();
     vbRoot = fullfile(rootDir, 'data', 'voicebank');
     testClean = fullfile(vbRoot, 'clean_test');
@@ -34,9 +51,11 @@ function download_data()
 
     % "Already present" means complete matched pairs in all four
     % folders — counting clean files alone would certify a
-    % half-extracted corpus as done.
-    if numel(listPairs(testClean, testNoisy)) >= 824 && ...
-       numel(listPairs(trainClean, trainNoisy)) >= 800
+    % half-extracted corpus as done. Extra shards are fetched whenever
+    % requested, regardless of this early return.
+    basePresent = numel(listPairs(testClean, testNoisy)) >= 824 && ...
+        numel(listPairs(trainClean, trainNoisy)) >= 800;
+    if basePresent && isempty(extraShards)
         fprintf('VoiceBank-DEMAND data already present under %s\n', vbRoot);
         return;
     end
@@ -48,25 +67,46 @@ function download_data()
     base = "https://huggingface.co/datasets/JacobLinCool/VoiceBank-DEMAND-16k/resolve/" ...
         + revision + "/data/";
     testSha256 = '08b43dbea4a15a5f3067233f5cb2de3e5c9a600a3ae5b969661740778f642c87';
-    trainSha256 = 'd8195194a27e8d007502d6eacf5e0fac71adb9fe343ee228b78bae3559464319';
+    % SHA-256 of training shards 0-4, as listed by the dataset
+    % repository's file metadata at the pinned revision.
+    trainSha256 = { ...
+        'd8195194a27e8d007502d6eacf5e0fac71adb9fe343ee228b78bae3559464319', ...
+        'd8a5c932846399a7021b544157b25bfce736122f66a27239c13bbb9262aa98bc', ...
+        'e486e0782f9c978cd2ea08fb25dbe1694cc4c87efaecde8b04308e683db8a91c', ...
+        '6cf3cc86af272546cb94c1e8d26088b3a15feef1f662b145cea86a7c33387b6f', ...
+        '2afbf89fc0b9e651f7990ff17d247ab18803d463842281a67c4a6b7c25abc7b2'};
 
-    testParquet = fullfile(dlDir, 'test.parquet');
-    if ~exist(testParquet, 'file')
-        fprintf('Downloading test shard (about 133 MB)...\n');
-        websave(testParquet, base + "test-00000-of-00001.parquet");
-    end
-    verifySha256(testParquet, testSha256);
-    nTest = extractParquetPairs(testParquet, testClean, testNoisy, inf);
-    fprintf('Extracted %d test pairs.\n', nTest);
+    if ~basePresent
+        testParquet = fullfile(dlDir, 'test.parquet');
+        if ~exist(testParquet, 'file')
+            fprintf('Downloading test shard (about 133 MB)...\n');
+            websave(testParquet, base + "test-00000-of-00001.parquet");
+        end
+        verifySha256(testParquet, testSha256);
+        nTest = extractParquetPairs(testParquet, testClean, testNoisy, inf);
+        fprintf('Extracted %d test pairs.\n', nTest);
 
-    trainParquet = fullfile(dlDir, 'train0.parquet');
-    if ~exist(trainParquet, 'file')
-        fprintf('Downloading training shard 1 of 5 (about 445 MB)...\n');
-        websave(trainParquet, base + "train-00000-of-00005.parquet");
+        trainParquet = fullfile(dlDir, 'train0.parquet');
+        if ~exist(trainParquet, 'file')
+            fprintf('Downloading training shard 1 of 5 (about 445 MB)...\n');
+            websave(trainParquet, base + "train-00000-of-00005.parquet");
+        end
+        verifySha256(trainParquet, trainSha256{1});
+        nTrain = extractParquetPairs(trainParquet, trainClean, trainNoisy, 800);
+        fprintf('Extracted %d training pairs.\n', nTrain);
     end
-    verifySha256(trainParquet, trainSha256);
-    nTrain = extractParquetPairs(trainParquet, trainClean, trainNoisy, 800);
-    fprintf('Extracted %d training pairs.\n', nTrain);
+
+    for shard = extraShards
+        localName = sprintf('train%d.parquet', shard);
+        shardParquet = fullfile(dlDir, localName);
+        if ~exist(shardParquet, 'file')
+            fprintf('Downloading extra training shard %d of 5 (about 420 MB)...\n', shard + 1);
+            websave(shardParquet, base + sprintf("train-%05d-of-00005.parquet", shard));
+        end
+        verifySha256(shardParquet, trainSha256{shard + 1});
+        nExtra = extractParquetPairs(shardParquet, trainClean, trainNoisy, maxExtraPairs);
+        fprintf('Extracted %d pairs from extra shard %d.\n', nExtra, shard);
+    end
 end
 
 function verifySha256(file, expected)

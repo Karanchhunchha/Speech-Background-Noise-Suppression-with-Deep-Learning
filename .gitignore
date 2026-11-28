@@ -21,6 +21,15 @@ reports/*_v1.*
 # Exception: the v1 summary is kept as audit evidence for the
 # model-selection comparison in FINAL_SUBMISSION_REPORT.md
 !reports/metrics_summary_v1.csv
+# Exception: the frozen pre-hardening baseline for before/after
+# comparison in the submission-hardening work
+!reports/baseline_v1.csv
+
+# Listening-test working set (generated locally by make_listening_test)
+listening_test/
+
+# Enhanced clips exported for the offline PESQ script (large)
+reports/enhanced_subset/
 
 # MATLAB temporaries
 *.asv

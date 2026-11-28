@@ -14,14 +14,20 @@ function stats = prepare_training_data(varargin)
 %     'NumUtterances'  pairs to use (default 800, matching TRAIN_MODEL)
 %     'CropsPerUtterance' random 64-frame crops per pair (default 6)
 %     'Seed'           RNG seed for reproducibility (default 42)
+%     'ExcludeSpeakers' speaker ids (e.g. {'p236','p254'}) whose pairs
+%                      are left out entirely — used to keep validation
+%                      speakers genuinely unseen in Phase-1 experiments
+%                      (default {} — the shipped configuration)
 
     p = inputParser;
     addParameter(p, 'NumUtterances', 800);
     addParameter(p, 'CropsPerUtterance', 6);
     addParameter(p, 'Seed', 42);
+    addParameter(p, 'ExcludeSpeakers', {});
     parse(p, varargin{:});
     numUtt = p.Results.NumUtterances;
     cropsPerUtt = p.Results.CropsPerUtterance;
+    excludeSpeakers = cellstr(p.Results.ExcludeSpeakers);
 
     rootDir = setup();
     winLen = 512;
@@ -35,6 +41,15 @@ function stats = prepare_training_data(varargin)
     if isempty(pairs)
         error('prepare_training_data:NoData', ...
             'No training pairs found in %s. Run download_data() first.', cleanDir);
+    end
+    if ~isempty(excludeSpeakers)
+        keep = true(numel(pairs), 1);
+        for i = 1:numel(pairs)
+            keep(i) = ~any(strcmp(pairs(i).id(1:4), excludeSpeakers));
+        end
+        pairs = pairs(keep);
+        fprintf('Excluded speakers %s: %d pairs remain.\n', ...
+            strjoin(excludeSpeakers, ', '), numel(pairs));
     end
     numUtt = min(numUtt, numel(pairs));
     pairs = pairs(1:numUtt);
@@ -99,7 +114,8 @@ function stats = prepare_training_data(varargin)
 
     stats = struct('NumPatches', out, 'NumUtterances', numUtt, 'Mu', mu, 'Sigma', sigma);
     patchConfig = struct('NumUtterances', numUtt, 'CropsPerUtterance', cropsPerUtt, ...
-        'SegLen', segLen, 'RequestedUtterances', p.Results.NumUtterances);
+        'SegLen', segLen, 'RequestedUtterances', p.Results.NumUtterances, ...
+        'ExcludeSpeakers', {excludeSpeakers});
     save(fullfile(rootDir, 'data', 'training_patches.mat'), ...
         'XTrain', 'YTrain', 'mu', 'sigma', 'winLen', 'hop', 'segLen', 'patchConfig', '-v7.3');
     fprintf('Prepared %d patches from %d utterances (mu=%.4f, sigma=%.4f).\n', ...
