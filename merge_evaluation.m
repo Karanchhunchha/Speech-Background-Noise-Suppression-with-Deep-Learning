@@ -40,7 +40,7 @@ function summary = merge_evaluation(reportDir)
     end
     writetable(allRows, fullfile(reportDir, 'metrics_per_file.csv'));
 
-    methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'CNN'};
+    methodNames = {'Noisy', 'SpectralSubtraction', 'Wiener', 'LogMMSE', 'CNN'};
     present = false(1, numel(methodNames));
     for m = 1:numel(methodNames)
         present(m) = any(strcmp(allRows.Properties.VariableNames, ...
